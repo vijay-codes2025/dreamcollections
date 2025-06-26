@@ -142,6 +142,26 @@ spring:
             # Path for product-catalog-service CategoryController is /categories/**
             - RewritePath=/api/categories/(?<segment>.*), /categories/$\{segment}
 
+        # Cart Service routes
+        - id: cart-service-carts
+          uri: http://localhost:8083 # Direct URL to cart-service
+          predicates:
+            - Path=/api/carts/**
+          filters:
+            # CartController in cart-service is mapped to /carts/**
+            # Example: /api/carts/mine -> /carts/mine
+            - RewritePath=/api/carts/(?<segment>.*), /carts/$\{segment}
+
+        # Order Service routes
+        - id: order-service-orders
+          uri: http://localhost:8084 # Direct URL to order-service
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            # OrderController in order-service is mapped to /orders/**
+            # Example: /api/orders/my -> /orders/my
+            - RewritePath=/api/orders/(?<segment>.*), /orders/$\{segment}
+
 # Logging levels for gateway debugging
 logging:
   level:
