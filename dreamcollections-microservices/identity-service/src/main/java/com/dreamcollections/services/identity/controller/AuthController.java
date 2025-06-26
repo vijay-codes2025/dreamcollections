@@ -57,22 +57,18 @@ public class AuthController {
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String jwt = jwtUtils.generateJwtToken(authentication);
 
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        User user = userRepository.findByUsername(userDetails.getUsername())
-            .orElseThrow(() -> {
-                log.error("User not found after successful authentication: {}", userDetails.getUsername());
-                return new RuntimeException("Error: User not found after authentication.");
-            });
+        // Principal is now UserPrincipal which contains id, username, email
+        com.dreamcollections.services.identity.security.UserPrincipal userPrincipal = (com.dreamcollections.services.identity.security.UserPrincipal) authentication.getPrincipal();
 
-        List<String> roles = userDetails.getAuthorities().stream()
+        List<String> roles = userPrincipal.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
 
-        log.info("User {} signed in successfully.", user.getUsername());
+        log.info("User {} signed in successfully.", userPrincipal.getUsername());
         return ResponseEntity.ok(new JwtResponse(jwt,
-                                                 user.getId(),
-                                                 user.getUsername(),
-                                                 user.getEmail(),
+                                                 userPrincipal.getId(),
+                                                 userPrincipal.getUsername(),
+                                                 userPrincipal.getEmail(), // Get email from UserPrincipal
                                                  roles));
     }
 

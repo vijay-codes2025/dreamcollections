@@ -110,7 +110,7 @@ spring:
       routes:
         # Identity Service routes
         - id: identity-service-auth
-          uri: http://localhost:8081 # Direct URL to identity-service
+          uri: http://identity-service:8081 # Docker DNS resolvable service name
           predicates:
             - Path=/api/auth/**
           filters:
@@ -118,7 +118,7 @@ spring:
             - RewritePath=/api/auth/(?<segment>.*), /auth/$\{segment}
 
         - id: identity-service-users
-          uri: http://localhost:8081 # Direct URL to identity-service
+          uri: http://identity-service:8081 # Docker DNS resolvable service name
           predicates:
             - Path=/api/users/**
           filters:
@@ -127,7 +127,7 @@ spring:
 
         # Product Catalog Service routes
         - id: product-catalog-service-products
-          uri: http://localhost:8082 # Direct URL to product-catalog-service
+          uri: http://product-catalog-service:8082 # Docker DNS resolvable service name
           predicates:
             - Path=/api/products/**
           filters:
@@ -135,7 +135,7 @@ spring:
             - RewritePath=/api/products/(?<segment>.*), /products/$\{segment}
 
         - id: product-catalog-service-categories
-          uri: http://localhost:8082 # Direct URL to product-catalog-service
+          uri: http://product-catalog-service:8082 # Docker DNS resolvable service name
           predicates:
             - Path=/api/categories/**
           filters:
@@ -144,7 +144,7 @@ spring:
 
         # Cart Service routes
         - id: cart-service-carts
-          uri: http://localhost:8083 # Direct URL to cart-service
+          uri: http://cart-service:8083 # Docker DNS resolvable service name
           predicates:
             - Path=/api/carts/**
           filters:
@@ -154,7 +154,7 @@ spring:
 
         # Order Service routes
         - id: order-service-orders
-          uri: http://localhost:8084 # Direct URL to order-service
+          uri: http://order-service:8084 # Docker DNS resolvable service name
           predicates:
             - Path=/api/orders/**
           filters:

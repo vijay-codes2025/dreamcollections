@@ -5,6 +5,7 @@ import com.dreamcollections.services.identity.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import com.dreamcollections.services.identity.security.UserPrincipal; // Import custom UserPrincipal
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -30,8 +31,11 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 new SimpleGrantedAuthority(user.getRole().name())
         );
 
-        return new org.springframework.security.core.userdetails.User(
+        // Return custom UserPrincipal
+        return new UserPrincipal(
+                user.getId(),
                 user.getUsername(),
+                user.getEmail(),
                 user.getPassword(),
                 authorities
         );

@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+// UserDetails is still the type from Authentication.getPrincipal()
+// We will cast it to UserPrincipal if it's our custom type.
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -42,16 +44,42 @@ public class JwtUtils {
     }
 
     public String generateJwtToken(Authentication authentication) {
-        UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
+        Object principal = authentication.getPrincipal();
+        String username;
+        Long userId;
+
+        if (principal instanceof UserPrincipal) {
+            UserPrincipal userPrincipal = (UserPrincipal) principal;
+            username = userPrincipal.getUsername();
+            userId = userPrincipal.getId();
+        } else if (principal instanceof UserDetails) {
+            // Fallback if it's a standard UserDetails (though our UserDetailsServiceImpl now returns UserPrincipal)
+            username = ((UserDetails) principal).getUsername();
+            // In this fallback, userId might not be available directly. This indicates a potential setup issue.
+            // For robustness, one might fetch user from DB here, but it's better if UserPrincipal is always used.
+            logger.warn("Authentication principal is UserDetails, not UserPrincipal. UserId claim might be missing.");
+            userId = null; // Or throw an error, or fetch from DB if critical
+        } else {
+            username = principal.toString(); // Generic fallback
+            userId = null;
+            logger.warn("Authentication principal is not an instance of UserDetails. UserId claim will be missing.");
+        }
+
         String authorities = authentication.getAuthorities().stream()
                                 .map(GrantedAuthority::getAuthority)
                                 .collect(Collectors.joining(","));
 
-        return Jwts.builder()
-                .setSubject(userPrincipal.getUsername())
+        JwtBuilder jwtBuilder = Jwts.builder()
+                .setSubject(username)
                 .claim("roles", authorities) // Storing roles in the token
                 .setIssuer(jwtIssuer)
-                .setIssuedAt(new Date())
+                .setIssuedAt(new Date());
+
+        if (userId != null) {
+            jwtBuilder.claim("userId", userId); // Add userId claim
+        }
+
+        return jwtBuilder
                 .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
                 .signWith(jwtSecretKey, SignatureAlgorithm.HS256)
                 .compact();
