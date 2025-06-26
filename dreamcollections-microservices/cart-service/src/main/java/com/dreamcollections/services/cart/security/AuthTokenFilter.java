@@ -12,7 +12,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
+// UserPrincipal will be used instead of Spring's User
+// import org.springframework.security.core.userdetails.User;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -39,7 +40,15 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             String jwt = parseJwt(request);
             if (jwt != null && jwtUtils.validateJwtToken(jwt)) {
                 String username = jwtUtils.getUsernameFromJwtToken(jwt);
-                Claims claims = jwtUtils.getClaimsFromJwtToken(jwt);
+                Long userId = jwtUtils.getUserIdFromJwtToken(jwt); // Extract userId
+
+                if (userId == null) {
+                    logger.warn("User ID not found in JWT token for username: {}. Cannot authenticate.", username);
+                    filterChain.doFilter(request, response); // Continue chain without auth
+                    return;
+                }
+
+                Claims claims = jwtUtils.getClaimsFromJwtToken(jwt); // Already validated
                 String rolesClaim = claims.get("roles", String.class);
 
                 List<GrantedAuthority> authorities = Collections.emptyList();
@@ -51,16 +60,17 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                     logger.warn("No roles claim found in JWT for user {} in Cart Service", username);
                 }
 
-                User principal = new User(username, "", authorities);
+                UserPrincipal principal = new UserPrincipal(userId, username, authorities);
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(principal, null, authorities);
 
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-                logger.debug("User {} authenticated in Cart Service with roles {} for path {}", username, authorities, request.getServletPath());
+                logger.debug("User {} (ID: {}) authenticated in Cart Service with roles {} for path {}",
+                             username, userId, authorities, request.getServletPath());
             }
         } catch (Exception e) {
-            logger.error("Cannot set user authentication in Cart Service: {}", e.getMessage());
+            logger.error("Cannot set user authentication in Cart Service: {}", e.getMessage(), e);
         }
 
         filterChain.doFilter(request, response);

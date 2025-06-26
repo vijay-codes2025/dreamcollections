@@ -48,11 +48,18 @@ public class JwtUtils {
                    .getBody();
     }
 
+    // Method to extract specific claim like userId (assuming it's stored as "userId")
+    public Long getUserIdFromJwtToken(String token) {
+        Claims claims = getClaimsFromJwtToken(token); // Assumes token is already validated before this call if used standalone
+        return claims.get("userId", Long.class); // Make sure "userId" is the claim name used by IdentityService
+    }
+
+
     public boolean validateJwtToken(String authToken) {
         try {
             Jwts.parserBuilder()
                 .setSigningKey(jwtSecretKey)
-                .requireIssuer(jwtIssuer)
+                .requireIssuer(jwtIssuer) // Validate issuer
                 .build()
                 .parseClaimsJws(authToken);
             return true;

@@ -1,0 +1,130 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15 # Using PostgreSQL 15
+    container_name: dreamcollections_db
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      # POSTGRES_DB: main_db # Optional: can create a default DB, but services will connect to their specific ones
+    ports:
+      - "5432:5432" # Map host port to container port
+    volumes:
+      - pgdata:/var/lib/postgresql/data # Persistent storage for database
+    networks:
+      - dreamcollections-net
+    healthcheck: # Optional: check if DB is ready before other services start fully
+      test: ["CMD-SHELL", "pg_isready -U admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  identity-service:
+    build: ./identity-service
+    container_name: identity_service
+    ports:
+      - "8081:8081"
+    environment:
+      SERVER_PORT: 8081
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/identity_db # Connect to 'db' service on port 5432
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: password
+      JWT_SECRET: IdentityServiceSuperSecretKeyForJWTsWhichIsVeryLongAndSecureSoNobodyCanGuessIt # Ensure this matches
+      JWT_ISSUER: com.dreamcollections.identity-service
+      # Add any other necessary environment variables
+    depends_on:
+      db: # Wait for db to be healthy (if healthcheck is defined and works as expected)
+        condition: service_healthy
+    networks:
+      - dreamcollections-net
+
+  product-catalog-service:
+    build: ./product-catalog-service
+    container_name: product_catalog_service
+    ports:
+      - "8082:8082"
+    environment:
+      SERVER_PORT: 8082
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/product_catalog_db
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: password
+      JWT_SECRET: IdentityServiceSuperSecretKeyForJWTsWhichIsVeryLongAndSecureSoNobodyCanGuessIt # For validating tokens
+      JWT_ISSUER: com.dreamcollections.identity-service
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - dreamcollections-net
+
+  cart-service:
+    build: ./cart-service
+    container_name: cart_service
+    ports:
+      - "8083:8083"
+    environment:
+      SERVER_PORT: 8083
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/cart_db
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: password
+      JWT_SECRET: IdentityServiceSuperSecretKeyForJWTsWhichIsVeryLongAndSecureSoNobodyCanGuessIt
+      JWT_ISSUER: com.dreamcollections.identity-service
+      SERVICES_PRODUCT-CATALOG_URL: http://product-catalog-service:8082 # Docker DNS resolves service name
+    depends_on:
+      db:
+        condition: service_healthy
+      product-catalog-service: # Optional: ensure product service is at least started
+        condition: service_started
+    networks:
+      - dreamcollections-net
+
+  order-service:
+    build: ./order-service
+    container_name: order_service
+    ports:
+      - "8084:8084"
+    environment:
+      SERVER_PORT: 8084
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/order_db
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: password
+      JWT_SECRET: IdentityServiceSuperSecretKeyForJWTsWhichIsVeryLongAndSecureSoNobodyCanGuessIt
+      JWT_ISSUER: com.dreamcollections.identity-service
+      SERVICES_PRODUCT-CATALOG_URL: http://product-catalog-service:8082
+      SERVICES_CART_URL: http://cart-service:8083
+      # SPRING_RABBITMQ_HOST: rabbitmq # If RabbitMQ service is added
+    depends_on:
+      db:
+        condition: service_healthy
+      product-catalog-service:
+        condition: service_started
+      cart-service:
+        condition: service_started
+    networks:
+      - dreamcollections-net
+
+  api-gateway-service:
+    build: ./api-gateway-service
+    container_name: api_gateway_service
+    ports:
+      - "8080:8080" # Main entry point for clients
+    environment:
+      SERVER_PORT: 8080
+      # Routes in application.yml will need to use service names, e.g., http://identity-service:8081
+      # No database needed for gateway itself unless storing route configs (not the case here)
+    depends_on: # Gateway should start after backend services are available
+      - identity-service
+      - product-catalog-service
+      - cart-service
+      - order-service
+    networks:
+      - dreamcollections-net
+
+# Define a network for services to communicate
+networks:
+  dreamcollections-net:
+    driver: bridge
+
+# Define a named volume for PostgreSQL data persistence
+volumes:
+  pgdata:
