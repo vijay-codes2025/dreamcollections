@@ -1,7 +1,13 @@
 package com.dreamcollections.services.cart.dto;
 
 import java.math.BigDecimal;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+@Getter
+@Setter
+@NoArgsConstructor
 public class CartItemDto {
     private Long cartItemId; // ID of the CartItem entity itself
     private Long productVariantId;
@@ -11,8 +17,6 @@ public class CartItemDto {
     private BigDecimal unitPrice;
     private Integer quantity;
     private BigDecimal subtotal;
-
-    public CartItemDto() {}
 
     public CartItemDto(Long cartItemId, Long productVariantId, String productName, String productImageUrl,
                        String variantSize, BigDecimal unitPrice, Integer quantity) {
@@ -30,31 +34,19 @@ public class CartItemDto {
         }
     }
 
-    // Getters and Setters
-    public Long getCartItemId() { return cartItemId; }
-    public void setCartItemId(Long cartItemId) { this.cartItemId = cartItemId; }
-    public Long getProductVariantId() { return productVariantId; }
-    public void setProductVariantId(Long productVariantId) { this.productVariantId = productVariantId; }
-    public String getProductName() { return productName; }
-    public void setProductName(String productName) { this.productName = productName; }
-    public String getProductImageUrl() { return productImageUrl; }
-    public void setProductImageUrl(String productImageUrl) { this.productImageUrl = productImageUrl; }
-    public String getVariantSize() { return variantSize; }
-    public void setVariantSize(String variantSize) { this.variantSize = variantSize; }
-    public BigDecimal getUnitPrice() { return unitPrice; }
+    // Custom setters to keep subtotal calculation logic
     public void setUnitPrice(BigDecimal unitPrice) {
         this.unitPrice = unitPrice;
         if (this.unitPrice != null && this.quantity != null) {
             this.subtotal = this.unitPrice.multiply(BigDecimal.valueOf(this.quantity));
         }
     }
-    public Integer getQuantity() { return quantity; }
+
     public void setQuantity(Integer quantity) {
         this.quantity = quantity;
         if (this.unitPrice != null && this.quantity != null) {
             this.subtotal = this.unitPrice.multiply(BigDecimal.valueOf(this.quantity));
         }
     }
-    public BigDecimal getSubtotal() { return subtotal; }
-    // No setter for subtotal as it's calculated
+    // Getter for subtotal is provided by Lombok
 }
