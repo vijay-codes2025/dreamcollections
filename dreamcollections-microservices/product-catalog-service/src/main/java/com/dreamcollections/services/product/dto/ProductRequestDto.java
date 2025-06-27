@@ -5,9 +5,13 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.util.List;
 
+@Data
+@NoArgsConstructor
 public class ProductRequestDto {
 
     @NotBlank(message = "Product name cannot be blank")
@@ -35,18 +39,5 @@ public class ProductRequestDto {
     @Size(min = 1, message = "Product must have at least one variant")
     private List<ProductVariantDto> variants;
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-    public BigDecimal getPrice() { return price; }
-    public void setPrice(BigDecimal price) { this.price = price; }
-    public String getImageUrl() { return imageUrl; }
-    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
-    public String getVideoUrl() { return videoUrl; }
-    public void setVideoUrl(String videoUrl) { this.videoUrl = videoUrl; }
-    public Long getCategoryId() { return categoryId; }
-    public void setCategoryId(Long categoryId) { this.categoryId = categoryId; }
-    public List<ProductVariantDto> getVariants() { return variants; }
-    public void setVariants(List<ProductVariantDto> variants) { this.variants = variants; }
+    // Lombok generates getters and setters
 }

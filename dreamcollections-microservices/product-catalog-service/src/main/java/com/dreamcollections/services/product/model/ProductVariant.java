@@ -1,7 +1,11 @@
 package com.dreamcollections.services.product.model; // Updated package
 
 import jakarta.persistence.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
+@NoArgsConstructor
 @Entity
 @Table(name = "product_variants")
 public class ProductVariant {
@@ -21,55 +25,11 @@ public class ProductVariant {
     private Integer stockQuantity;
 
     // Constructors
-    public ProductVariant() {
-    }
-
     public ProductVariant(Product product, String size, Integer stockQuantity) {
         this.product = product;
         this.size = size;
         this.stockQuantity = stockQuantity;
     }
 
-    // Getters and Setters
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Product getProduct() {
-        return product;
-    }
-
-    public void setProduct(Product product) {
-        this.product = product;
-    }
-
-    public String getSize() {
-        return size;
-    }
-
-    public void setSize(String size) {
-        this.size = size;
-    }
-
-    public Integer getStockQuantity() {
-        return stockQuantity;
-    }
-
-    public void setStockQuantity(Integer stockQuantity) {
-        this.stockQuantity = stockQuantity;
-    }
-
-    @Override
-    public String toString() {
-        return "ProductVariant{" +
-               "id=" + id +
-               ", productId=" + (product != null ? product.getId() : "null") +
-               ", size='" + size + '\'' +
-               ", stockQuantity=" + stockQuantity +
-               '}';
-    }
+    // Lombok generates getters, setters and toString
 }

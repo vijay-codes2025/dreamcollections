@@ -4,7 +4,11 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.util.HashSet; // Initialize collections
 import java.util.Set;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
+@NoArgsConstructor
 @Entity
 @Table(name = "products")
 public class Product {
@@ -36,9 +40,6 @@ public class Product {
     private Set<ProductVariant> variants = new HashSet<>(); // Initialize
 
     // Constructors
-    public Product() {
-    }
-
     public Product(String name, String description, BigDecimal price, Category category, String imageUrl, String videoUrl) {
         this.name = name;
         this.description = description;
@@ -48,70 +49,7 @@ public class Product {
         this.videoUrl = videoUrl;
     }
 
-    // Getters and Setters
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public BigDecimal getPrice() {
-        return price;
-    }
-
-    public void setPrice(BigDecimal price) {
-        this.price = price;
-    }
-
-    public String getImageUrl() {
-        return imageUrl;
-    }
-
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
-    }
-
-    public String getVideoUrl() {
-        return videoUrl;
-    }
-
-    public void setVideoUrl(String videoUrl) {
-        this.videoUrl = videoUrl;
-    }
-
-    public Category getCategory() {
-        return category;
-    }
-
-    public void setCategory(Category category) {
-        this.category = category;
-    }
-
-    public Set<ProductVariant> getVariants() {
-        return variants;
-    }
-
-    public void setVariants(Set<ProductVariant> variants) {
-        this.variants = variants;
-    }
+    // Lombok generates getters and setters
 
     // Helper to add variant and set bidirectional relationship
     public void addVariant(ProductVariant variant) {
@@ -124,14 +62,5 @@ public class Product {
         variant.setProduct(null);
     }
 
-
-    @Override
-    public String toString() {
-        return "Product{" +
-               "id=" + id +
-               ", name='" + name + '\'' +
-               ", price=" + price +
-               ", categoryName=" + (category != null ? category.getName() : "null") +
-               '}';
-    }
+    // Lombok generates toString
 }

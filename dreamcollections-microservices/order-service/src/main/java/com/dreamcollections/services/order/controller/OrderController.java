@@ -42,7 +42,7 @@ public class OrderController {
 
     @GetMapping("/{orderId}")
     // User can only get their own order. Admin could have a separate endpoint or broader access.
-    @PreAuthorize("#userId == principal.id or hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<OrderResponseDto> getOrderById(
             @PathVariable Long orderId,
             // @RequestParam Long userId, // Or get userId from path like /user/{userId}/order/{orderId}
