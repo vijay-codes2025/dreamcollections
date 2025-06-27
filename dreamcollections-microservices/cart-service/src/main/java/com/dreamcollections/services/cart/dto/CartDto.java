@@ -17,8 +17,6 @@ public class CartDto {
     private BigDecimal totalPrice = BigDecimal.ZERO;
     private int totalItemsCount = 0; // Sum of quantities of all cart items
 
-    public CartDto() {}
-
     public CartDto(Long cartId, Long userId, List<CartItemDto> items) {
         this.cartId = cartId;
         this.userId = userId;

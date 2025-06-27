@@ -81,5 +81,4 @@ public class Order {
         updatedAt = LocalDateTime.now();
     }
 
-    // Lombok generates equals, hashCode and toString
 }

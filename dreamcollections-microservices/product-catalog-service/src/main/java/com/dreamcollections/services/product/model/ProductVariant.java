@@ -30,6 +30,4 @@ public class ProductVariant {
         this.size = size;
         this.stockQuantity = stockQuantity;
     }
-
-    // Lombok generates getters, setters and toString
 }

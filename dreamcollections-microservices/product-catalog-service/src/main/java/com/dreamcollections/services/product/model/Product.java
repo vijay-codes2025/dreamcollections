@@ -49,8 +49,6 @@ public class Product {
         this.videoUrl = videoUrl;
     }
 
-    // Lombok generates getters and setters
-
     // Helper to add variant and set bidirectional relationship
     public void addVariant(ProductVariant variant) {
         variants.add(variant);
