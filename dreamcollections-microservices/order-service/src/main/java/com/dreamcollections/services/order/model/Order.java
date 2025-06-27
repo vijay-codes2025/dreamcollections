@@ -5,8 +5,11 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.Objects;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
+@NoArgsConstructor
 @Entity
 @Table(name = "orders") // "order" is often a reserved keyword in SQL
 public class Order {
@@ -44,9 +47,6 @@ public class Order {
     private Set<OrderItem> items = new HashSet<>();
 
     // Constructors
-    public Order() {
-    }
-
     public Order(Long userId, BigDecimal totalAmount, OrderStatus status, String shippingAddress) {
         this.userId = userId;
         this.totalAmount = totalAmount;
@@ -54,25 +54,7 @@ public class Order {
         this.shippingAddress = shippingAddress;
     }
 
-    // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public Long getUserId() { return userId; }
-    public void setUserId(Long userId) { this.userId = userId; }
-    public BigDecimal getTotalAmount() { return totalAmount; }
-    public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
-    public OrderStatus getStatus() { return status; }
-    public void setStatus(OrderStatus status) { this.status = status; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
-    public String getShippingAddress() { return shippingAddress; }
-    public void setShippingAddress(String shippingAddress) { this.shippingAddress = shippingAddress; }
-    public String getPaymentTransactionId() { return paymentTransactionId; }
-    public void setPaymentTransactionId(String paymentTransactionId) { this.paymentTransactionId = paymentTransactionId; }
-    public Set<OrderItem> getItems() { return items; }
-    public void setItems(Set<OrderItem> items) { this.items = items; }
+    // Lombok generates getters and setters
 
     // Helper methods
     public void addItem(OrderItem item) {
@@ -99,27 +81,5 @@ public class Order {
         updatedAt = LocalDateTime.now();
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Order order = (Order) o;
-        return Objects.equals(id, order.id) && Objects.equals(userId, order.userId);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, userId);
-    }
-
-    @Override
-    public String toString() {
-        return "Order{" +
-               "id=" + id +
-               ", userId=" + userId +
-               ", totalAmount=" + totalAmount +
-               ", status=" + status +
-               ", createdAt=" + createdAt +
-               '}';
-    }
+    // Lombok generates equals, hashCode and toString
 }

@@ -4,7 +4,11 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
+@NoArgsConstructor
 public class ProductVariantDto {
     private Long id;
 
@@ -17,8 +21,6 @@ public class ProductVariantDto {
     private Integer stockQuantity;
 
     private Long productId; // Included for context in responses
-
-    public ProductVariantDto() {}
 
     public ProductVariantDto(Long id, String size, Integer stockQuantity, Long productId) {
         this.id = id;
@@ -35,12 +37,5 @@ public class ProductVariantDto {
     }
 
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public String getSize() { return size; }
-    public void setSize(String size) { this.size = size; }
-    public Integer getStockQuantity() { return stockQuantity; }
-    public void setStockQuantity(Integer stockQuantity) { this.stockQuantity = stockQuantity; }
-    public Long getProductId() { return productId; }
-    public void setProductId(Long productId) { this.productId = productId; }
+    // Lombok generates getters and setters
 }
