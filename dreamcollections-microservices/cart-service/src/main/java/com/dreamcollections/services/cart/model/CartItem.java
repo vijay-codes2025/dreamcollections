@@ -2,7 +2,13 @@ package com.dreamcollections.services.cart.model;
 
 import jakarta.persistence.*;
 import java.util.Objects;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+@Getter
+@Setter
+@NoArgsConstructor
 @Entity
 @Table(name = "cart_items", uniqueConstraints = {
     @UniqueConstraint(columnNames = {"cart_id", "product_variant_id"}) // Ensure a variant appears only once per cart
@@ -28,45 +34,9 @@ public class CartItem {
     // For now, CartItem DTO will fetch current price from Product Catalog service.
 
     // Constructors
-    public CartItem() {
-    }
-
     public CartItem(Cart cart, Long productVariantId, Integer quantity) {
         this.cart = cart;
         this.productVariantId = productVariantId;
-        this.quantity = quantity;
-    }
-
-    // Getters and Setters
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Cart getCart() {
-        return cart;
-    }
-
-    public void setCart(Cart cart) {
-        this.cart = cart;
-    }
-
-    public Long getProductVariantId() {
-        return productVariantId;
-    }
-
-    public void setProductVariantId(Long productVariantId) {
-        this.productVariantId = productVariantId;
-    }
-
-    public Integer getQuantity() {
-        return quantity;
-    }
-
-    public void setQuantity(Integer quantity) {
         this.quantity = quantity;
     }
 

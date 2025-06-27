@@ -2,7 +2,11 @@ package com.dreamcollections.services.cart.payload.request; // Changed to payloa
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 public class AddItemToCartRequestDto {
 
     @NotNull(message = "Product Variant ID cannot be null")
@@ -12,8 +16,5 @@ public class AddItemToCartRequestDto {
     @Min(value = 1, message = "Quantity must be at least 1")
     private Integer quantity;
 
-    public Long getProductVariantId() { return productVariantId; }
-    public void setProductVariantId(Long productVariantId) { this.productVariantId = productVariantId; }
-    public Integer getQuantity() { return quantity; }
-    public void setQuantity(Integer quantity) { this.quantity = quantity; }
+    // Lombok generates getters and setters
 }
