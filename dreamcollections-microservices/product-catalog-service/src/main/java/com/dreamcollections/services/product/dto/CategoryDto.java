@@ -17,10 +17,19 @@ public class CategoryDto {
     @Size(max = 500, message = "Description can be up to 500 characters")
     private String description;
 
+    private Long parentId; // ID of the parent category
+
     public CategoryDto(Long id, String name, String description) {
         this.id = id;
         this.name = name;
         this.description = description;
+    }
+
+    public CategoryDto(Long id, String name, String description, Long parentId) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.parentId = parentId;
     }
     // Lombok generates getters and setters
 }
