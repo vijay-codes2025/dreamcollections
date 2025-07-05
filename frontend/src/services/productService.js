@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8080/api'; // API Gateway URL
+const API_BASE_URL = 'http://localhost:8080/api';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -9,25 +9,16 @@ const apiClient = axios.create({
   },
 });
 
-// Function to get the auth token (implement as needed, e.g., from localStorage)
-const getAuthToken = () => {
-  const token = localStorage.getItem('accessToken'); // Or however your token is stored
-  return token;
-};
-
-// Add a request interceptor to include the auth token if available
-// This is mainly for admin operations on products, viewing might be public
+// Add request interceptor for auth token if available
 apiClient.interceptors.request.use(
   config => {
-    const token = getAuthToken();
+    const token = localStorage.getItem('accessToken');
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
     return config;
   },
-  error => {
-    return Promise.reject(error);
-  }
+  error => Promise.reject(error)
 );
 
 export const getProductsByCategoryId = async (categoryId, page = 0, size = 10, sort = 'name') => {
@@ -36,12 +27,12 @@ export const getProductsByCategoryId = async (categoryId, page = 0, size = 10, s
       params: {
         page,
         size,
-        sort, // e.g., 'name,asc' or 'price,desc'
+        sort,
       },
     });
-    return response.data; // This will be a Page object { content: [], totalPages, totalElements, ... }
+    return response.data;
   } catch (error) {
-    console.error(`Error fetching products for category id ${categoryId}:`, error.response ? error.response.data : error.message);
+    console.error(`Error fetching products for category id ${categoryId}:`, error.response?.data || error.message);
     throw error;
   }
 };
@@ -51,14 +42,46 @@ export const getProductById = async (productId) => {
     const response = await apiClient.get(`/products/${productId}`);
     return response.data;
   } catch (error) {
-    console.error(`Error fetching product with id ${productId}:`, error.response ? error.response.data : error.message);
+    console.error(`Error fetching product with id ${productId}:`, error.response?.data || error.message);
     throw error;
   }
 };
 
-// Add other product service functions as needed (create, update, delete, getAll, search)
+export const getAllProducts = async (page = 0, size = 10, sort = 'name') => {
+  try {
+    const response = await apiClient.get('/products', {
+      params: {
+        page,
+        size,
+        sort,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching all products:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const searchProducts = async (searchTerm, page = 0, size = 10) => {
+  try {
+    const response = await apiClient.get('/products/search', {
+      params: {
+        name: searchTerm,
+        page,
+        size,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error searching products:', error.response?.data || error.message);
+    throw error;
+  }
+};
 
 export default {
   getProductsByCategoryId,
   getProductById,
+  getAllProducts,
+  searchProducts,
 };
