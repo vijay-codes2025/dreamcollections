@@ -55,11 +55,13 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/actuator/**").permitAll()
-                // All /orders/** endpoints require authentication.
-                // Specific user access control (user can only access their own orders, create order for self)
-                // will be handled in the controller/service layer using @PreAuthorize and the UserPrincipal.
+                // Secure admin endpoints specifically
+                .requestMatchers("/api/admin/**").hasRole("ADMIN") // or .hasAuthority("ROLE_ADMIN")
+                // Existing rule for general /orders endpoint (customer facing)
                 .requestMatchers("/orders/**").authenticated()
-                .anyRequest().authenticated()
+                // Secure other non-admin API endpoints if any, or fall through to anyRequest
+                // .requestMatchers("/api/someotherfeature/**").hasAnyRole("USER", "OTHER_ROLE")
+                .anyRequest().authenticated() // All other requests must be authenticated
             );
 
         http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);

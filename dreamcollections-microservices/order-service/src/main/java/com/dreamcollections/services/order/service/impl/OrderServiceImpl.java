@@ -162,12 +162,35 @@ public class OrderServiceImpl implements OrderService {
         }
 
         // 4. Create and Save Order
+        Address shippingAddressEntity = mapAddressDtoToEntity(createOrderRequestDto.getShippingAddress());
+        Address billingAddressEntity = mapAddressDtoToEntity(createOrderRequestDto.getBillingAddress());
+
+        // If billingAddress is not provided in request, and business rule is to use shipping address as billing:
+        if (billingAddressEntity == null && shippingAddressEntity != null) {
+            // This creates a distinct Address object for billing, even if data is same.
+            // If they should truly point to the same embedded instance (sharing columns if not for @AttributeOverrides),
+            // then Order entity design might need adjustment or just pass shippingAddressEntity for both.
+            // For distinct columns as set up by @AttributeOverrides, creating a new instance or copying is fine.
+            billingAddressEntity = shippingAddressEntity; // Or create a new Address object with same values
+        }
+
+
         Order order = new Order(
-            userId,
-            calculatedTotalAmount,
-            OrderStatus.PENDING_PAYMENT, // Initial status
-            createOrderRequestDto.getShippingAddress()
+                userId,
+                createOrderRequestDto.getCustomerEmail(),
+                createOrderRequestDto.getCustomerNameSnapshot(),
+                calculatedTotalAmount,
+                OrderStatus.PENDING_PAYMENT, // Initial order status
+                com.dreamcollections.services.order.model.PaymentStatus.PENDING, // Initial payment status
+                shippingAddressEntity,
+                billingAddressEntity,
+                createOrderRequestDto.getPaymentMethod()
         );
+        // Set optional fields if provided
+        if (createOrderRequestDto.getShippingMethod() != null && !createOrderRequestDto.getShippingMethod().isEmpty()) {
+            order.setShippingMethod(createOrderRequestDto.getShippingMethod());
+        }
+
         orderItems.forEach(order::addItem); // Sets bidirectional relationship
 
         Order savedOrder = orderRepository.save(order);
@@ -226,5 +249,245 @@ public class OrderServiceImpl implements OrderService {
     public Page<OrderResponseDto> getOrdersByUserId(Long userId, Pageable pageable) {
         log.debug("Fetching orders for user ID {}. Page: {}, Size: {}", userId, pageable.getPageNumber(), pageable.getPageSize());
         return orderRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable).map(this::mapOrderToDto);
+    }
+
+import com.dreamcollections.services.order.dto.AddressDto; // Import AddressDto
+import com.dreamcollections.services.order.dto.AdminOrderDetailDto;
+import com.dreamcollections.services.order.dto.AdminOrderSummaryDto;
+import com.dreamcollections.services.order.model.Address; // Import Address Entity
+// ... other imports from OrderServiceImpl
+
+// ... (inside OrderServiceImpl class)
+
+    // --- Helper to map AddressDto to Address entity ---
+    private Address mapAddressDtoToEntity(AddressDto addressDto) {
+        if (addressDto == null) {
+            return null;
+        }
+        Address address = new Address();
+        address.setStreet(addressDto.getStreet());
+        address.setAddressLine2(addressDto.getAddressLine2());
+        address.setCity(addressDto.getCity());
+        address.setStateOrProvince(addressDto.getStateOrProvince());
+        address.setPostalCode(addressDto.getPostalCode());
+        address.setCountry(addressDto.getCountry());
+        address.setContactPhone(addressDto.getContactPhone());
+        return address;
+    }
+
+    // --- Helper to map Address entity to AddressDto ---
+    private AddressDto mapAddressEntityToDto(Address addressEntity) {
+        if (addressEntity == null) {
+            return null;
+        }
+        AddressDto addressDto = new AddressDto();
+        addressDto.setStreet(addressEntity.getStreet());
+        addressDto.setAddressLine2(addressEntity.getAddressLine2());
+        addressDto.setCity(addressEntity.getCity());
+        addressDto.setStateOrProvince(addressEntity.getStateOrProvince());
+        addressDto.setPostalCode(addressEntity.getPostalCode());
+        addressDto.setCountry(addressEntity.getCountry());
+        addressDto.setContactPhone(addressEntity.getContactPhone());
+        return addressDto;
+    }
+
+
+    // --- Admin DTO Mappers ---
+
+    private AdminOrderSummaryDto mapOrderToAdminSummaryDto(Order order) {
+        if (order == null) return null;
+        return new AdminOrderSummaryDto(
+                order.getId(),
+                order.getUserId(),
+                order.getCustomerEmail(),
+                order.getCustomerNameSnapshot(),
+                order.getCreatedAt(), // Using createdAt as orderDate for summary
+                order.getTotalAmount(),
+                order.getStatus().name(),
+                order.getItems() != null ? order.getItems().size() : 0
+        );
+    }
+
+    private AdminOrderDetailDto mapOrderToAdminDetailDto(Order order) {
+        if (order == null) return null;
+
+        List<OrderItemResponseDto> itemDtos = order.getItems().stream()
+                .map(this::mapOrderItemToDto) // Reuse existing item mapper
+                .collect(Collectors.toList());
+
+        AddressDto shippingAddressDto = mapAddressEntityToDto(order.getShippingAddress());
+        AddressDto billingAddressDto = mapAddressEntityToDto(order.getBillingAddress());
+
+        // Assuming OrderStatusLogDto would be created and mapped if statusHistory is implemented
+        // List<OrderStatusLogDto> statusHistoryDto = order.getStatusLogs().stream().map(this::mapStatusLogToDto).collect(Collectors.toList());
+
+
+        return new AdminOrderDetailDto(
+                order.getId(),
+                order.getUserId(),
+                order.getCustomerEmail(),
+                order.getCustomerNameSnapshot(),
+                order.getCreatedAt(),
+                order.getUpdatedAt(),
+                order.getTotalAmount(),
+                order.getStatus().name(),
+                itemDtos,
+                shippingAddressDto,
+                billingAddressDto,
+                order.getPaymentMethod(),
+                order.getPaymentStatus().name(), // Assuming PaymentStatus is an enum
+                order.getShippingMethod(),
+                order.getTrackingNumber()
+                // statusHistoryDto // if implemented
+        );
+    }
+
+
+    // --- Admin Service Method Implementations ---
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<AdminOrderSummaryDto> getAllOrdersForAdmin(Specification<Order> spec, Pageable pageable) {
+        log.debug("Admin request: Fetching all orders with spec. Page: {}, Size: {}", pageable.getPageNumber(), pageable.getPageSize());
+        return orderRepository.findAll(spec, pageable).map(this::mapOrderToAdminSummaryDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<AdminOrderDetailDto> getOrderDetailsForAdmin(Long orderId) {
+        log.debug("Admin request: Fetching details for order ID {}.", orderId);
+        // Use findByIdWithItems to ensure items are fetched, or rely on OpenSessionInView/transactional context for LAZY loading
+        return orderRepository.findByIdWithItems(orderId).map(this::mapOrderToAdminDetailDto);
+    }
+
+    @Override
+    @Transactional
+    public AdminOrderDetailDto updateOrderStatus(Long orderId, String newStatusStr, String adminUsername) {
+        log.info("Admin {} request: Updating status for order ID {} to {}.", adminUsername, orderId, newStatusStr);
+        Order order = orderRepository.findByIdWithItems(orderId) // Fetch with items for DTO mapping
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+
+        OrderStatus newStatus;
+        try {
+            newStatus = OrderStatus.valueOf(newStatusStr.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid status string provided: {}", newStatusStr);
+            throw new BadRequestException("Invalid order status provided: " + newStatusStr);
+        }
+
+        OrderStatus oldStatus = order.getStatus();
+
+        if (oldStatus == newStatus) {
+            log.info("Order {} already in status {}. No change.", orderId, newStatus);
+            return mapOrderToAdminDetailDto(order);
+        }
+
+        if (!isValidTransition(oldStatus, newStatus)) {
+            log.warn("Invalid status transition for order ID {}: from {} to {}", orderId, oldStatus, newStatus);
+            throw new BadRequestException("Invalid status transition from " + oldStatus + " to " + newStatus + ".");
+        }
+
+        order.setStatus(newStatus);
+
+        // Log the status change
+        String notes = "Status changed by admin: " + adminUsername;
+        OrderStatusLog statusLog = new OrderStatusLog(order, oldStatus, newStatus, adminUsername, notes);
+        order.addStatusLog(statusLog); // Assumes Order entity has addStatusLog method
+
+        Order updatedOrder = orderRepository.save(order);
+        log.info("Order ID {} status updated to {} by admin {}.", updatedOrder.getId(), newStatus, adminUsername);
+
+        // TODO: Publish OrderStatusChangedEvent if needed for other services/notifications
+        // Example: if (newStatus == OrderStatus.PAID) { eventPublisher.publish(new OrderPaidEvent(order.getId())); }
+        // else if (newStatus == OrderStatus.SHIPPED) { eventPublisher.publish(new OrderShippedEvent(order.getId(), order.getTrackingNumber())); }
+
+
+        return mapOrderToAdminDetailDto(updatedOrder);
+    }
+
+    private static final Map<OrderStatus, Set<OrderStatus>> validTransitions = new HashMap<>();
+
+    static {
+        // From PENDING_PAYMENT
+        validTransitions.put(OrderStatus.PENDING_PAYMENT, Set.of(
+                OrderStatus.AWAITING_PAYMENT_CONFIRMATION,
+                OrderStatus.PAID, // Direct if payment is fast/integrated
+                OrderStatus.CANCELLED,
+                OrderStatus.FAILED
+        ));
+        // From AWAITING_PAYMENT_CONFIRMATION
+        validTransitions.put(OrderStatus.AWAITING_PAYMENT_CONFIRMATION, Set.of(
+                OrderStatus.PAID,
+                OrderStatus.FAILED,
+                OrderStatus.CANCELLED // If user cancels or system times out
+        ));
+        // From PAID
+        validTransitions.put(OrderStatus.PAID, Set.of(
+                OrderStatus.PROCESSING,
+                OrderStatus.REFUND_PENDING, // If a refund is requested immediately after payment
+                OrderStatus.CANCELLED // If order can be cancelled before processing
+        ));
+        // From PROCESSING
+        validTransitions.put(OrderStatus.PROCESSING, Set.of(
+                OrderStatus.SHIPPED,
+                OrderStatus.CANCELLED, // If cancellation is allowed during processing
+                OrderStatus.REFUND_PENDING // If processed but then needs refund before shipping
+        ));
+        // From SHIPPED
+        validTransitions.put(OrderStatus.SHIPPED, Set.of(
+                OrderStatus.DELIVERED,
+                OrderStatus.REFUND_PENDING // For returns after shipping
+        ));
+        // From DELIVERED
+        validTransitions.put(OrderStatus.DELIVERED, Set.of(
+                OrderStatus.REFUND_PENDING // For returns after delivery
+        ));
+        // From CANCELLED - Generally a terminal state for admin changes, but could allow re-opening if needed (not typical)
+         validTransitions.put(OrderStatus.CANCELLED, Set.of()); // No transitions out by admin by default
+
+        // From REFUND_PENDING
+        validTransitions.put(OrderStatus.REFUND_PENDING, Set.of(
+                OrderStatus.REFUNDED,
+                OrderStatus.FAILED // If refund attempt fails
+        ));
+        // From REFUNDED - Terminal state
+        validTransitions.put(OrderStatus.REFUNDED, Set.of());
+
+        // From FAILED - Could potentially be retried or moved to cancelled
+        validTransitions.put(OrderStatus.FAILED, Set.of(
+                OrderStatus.CANCELLED,
+                OrderStatus.PENDING_PAYMENT // If admin wants to re-initiate or allow user to retry
+        ));
+    }
+
+    private boolean isValidTransition(OrderStatus oldStatus, OrderStatus newStatus) {
+        if (oldStatus == null) { // Should not happen for an existing order
+            return false;
+        }
+        Set<OrderStatus> allowedTransitions = validTransitions.get(oldStatus);
+        return allowedTransitions != null && allowedTransitions.contains(newStatus);
+    }
+
+
+    @Override
+    @Transactional
+    public AdminOrderDetailDto addNoteToOrder(Long orderId, String noteText, String adminUsername) {
+        log.info("Admin {} request: Adding note to order ID {}.", adminUsername, orderId);
+        Order order = orderRepository.findByIdWithItems(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+
+        // For now, admin notes are part of OrderStatusLog.
+        // This method could create a specific type of log entry or update a dedicated notes field if one existed on Order.
+        // Let's create a "NOTE" type status log or similar. This interpretation might need refinement.
+        // A simpler approach for general notes might be a dedicated List<AdminNote> on Order entity.
+        // For now, we'll log it as a generic status log entry with current status as previous and new.
+        // This is a bit of a workaround if a dedicated notes field isn't on Order.
+
+        OrderStatusLog noteLog = new OrderStatusLog(order, order.getStatus(), order.getStatus(), adminUsername, "Admin Note: " + noteText);
+        order.addStatusLog(noteLog);
+
+        Order updatedOrder = orderRepository.save(order);
+        log.info("Admin note added to order ID {} by {}.", updatedOrder.getId(), adminUsername);
+        return mapOrderToAdminDetailDto(updatedOrder);
     }
 }
