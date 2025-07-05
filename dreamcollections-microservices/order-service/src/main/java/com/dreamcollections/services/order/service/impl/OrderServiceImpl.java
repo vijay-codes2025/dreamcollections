@@ -2,6 +2,9 @@ package com.dreamcollections.services.order.service.impl;
 
 import com.dreamcollections.services.order.client.CartServiceClient;
 import com.dreamcollections.services.order.client.ProductCatalogServiceClient;
+import com.dreamcollections.services.order.dto.AddressDto;
+import com.dreamcollections.services.order.dto.AdminOrderDetailDto;
+import com.dreamcollections.services.order.dto.AdminOrderSummaryDto;
 import com.dreamcollections.services.order.dto.client.CartDataDto;
 import com.dreamcollections.services.order.dto.client.CartItemForOrderDto;
 import com.dreamcollections.services.order.dto.client.ProductVariantDetailDto;
@@ -9,8 +12,9 @@ import com.dreamcollections.services.order.dto.client.UpdateStockRequestDto;
 import com.dreamcollections.services.order.dto.request.CreateOrderRequestDto;
 import com.dreamcollections.services.order.dto.response.OrderItemResponseDto;
 import com.dreamcollections.services.order.dto.response.OrderResponseDto;
-import com.dreamcollections.services.order.exception.BadRequestException; // Need this
-import com.dreamcollections.services.order.exception.ResourceNotFoundException; // Need this
+import com.dreamcollections.services.order.exception.BadRequestException;
+import com.dreamcollections.services.order.exception.ResourceNotFoundException;
+import com.dreamcollections.services.order.model.Address;
 import com.dreamcollections.services.order.model.Order;
 import com.dreamcollections.services.order.model.OrderItem;
 import com.dreamcollections.services.order.model.OrderStatus;
@@ -250,14 +254,6 @@ public class OrderServiceImpl implements OrderService {
         log.debug("Fetching orders for user ID {}. Page: {}, Size: {}", userId, pageable.getPageNumber(), pageable.getPageSize());
         return orderRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable).map(this::mapOrderToDto);
     }
-
-import com.dreamcollections.services.order.dto.AddressDto; // Import AddressDto
-import com.dreamcollections.services.order.dto.AdminOrderDetailDto;
-import com.dreamcollections.services.order.dto.AdminOrderSummaryDto;
-import com.dreamcollections.services.order.model.Address; // Import Address Entity
-// ... other imports from OrderServiceImpl
-
-// ... (inside OrderServiceImpl class)
 
     // --- Helper to map AddressDto to Address entity ---
     private Address mapAddressDtoToEntity(AddressDto addressDto) {
