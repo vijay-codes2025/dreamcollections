@@ -115,7 +115,7 @@ public class AuthController {
         User savedUser = userRepository.save(user);
         log.info("User {} registered successfully with ID {}.", savedUser.getUsername(), savedUser.getId());
 
-        // TODO - Phase 2: Publish UserCreatedEvent or make a call to CartService
+        // ISSUE-1: Publish UserCreatedEvent or call CartService after registration
         // Example: eventPublisher.publishEvent(new UserCreatedEvent(this, savedUser.getId(), savedUser.getUsername()));
         // For now, cart creation is deferred.
 

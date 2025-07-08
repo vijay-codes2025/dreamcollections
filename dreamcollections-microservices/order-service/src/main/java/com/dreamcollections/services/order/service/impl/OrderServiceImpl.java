@@ -54,7 +54,7 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private ProductCatalogServiceClient productCatalogServiceClient;
 
-    // TODO: Inject RabbitMQ template for event publishing later
+    // ISSUE-5: Inject RabbitMQ template for event publishing
     // @Autowired
     // private RabbitTemplate rabbitTemplate;
     // @Value("${app.rabbitmq.exchange.orderEvents}")
@@ -233,7 +233,7 @@ public class OrderServiceImpl implements OrderService {
             // This is less critical than stock update, but still an issue. Log and continue.
         }
 
-        // 7. TODO - Phase 3: Publish OrderPlacedEvent (e.g., to RabbitMQ)
+        // ISSUE-6: Publish OrderPlacedEvent (e.g., to RabbitMQ)
         // OrderPlacedEvent event = new OrderPlacedEvent(savedOrder.getId(), userId, calculatedTotalAmount);
         // rabbitTemplate.convertAndSend(orderEventsExchange, orderPlacedRoutingKey, event);
         // log.info("OrderPlacedEvent published for order ID {}.", savedOrder.getId());
@@ -393,7 +393,7 @@ public class OrderServiceImpl implements OrderService {
         Order updatedOrder = orderRepository.save(order);
         log.info("Order ID {} status updated to {} by admin {}.", updatedOrder.getId(), newStatus, adminUsername);
 
-        // TODO: Publish OrderStatusChangedEvent if needed for other services/notifications
+        // ISSUE-7: Publish OrderStatusChangedEvent if needed for other services/notifications
         // Example: if (newStatus == OrderStatus.PAID) { eventPublisher.publish(new OrderPaidEvent(order.getId())); }
         // else if (newStatus == OrderStatus.SHIPPED) { eventPublisher.publish(new OrderShippedEvent(order.getId(), order.getTrackingNumber())); }
 

@@ -39,7 +39,7 @@ public class SecurityConfig {
 //        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 //        CorsConfiguration config = new CorsConfiguration();
 //        config.setAllowCredentials(true);
-//        config.addAllowedOriginPattern("*"); // TODO: Restrict in production (API Gateway should handle this)
+//        config.addAllowedOriginPattern("*"); // ISSUE-4: Restrict in production (API Gateway should handle this)
 //        config.addAllowedHeader("*");
 //        config.addAllowedMethod("*");
 //        source.registerCorsConfiguration("/**", config);
