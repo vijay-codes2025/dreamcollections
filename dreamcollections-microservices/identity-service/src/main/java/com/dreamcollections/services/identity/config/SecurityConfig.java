@@ -81,6 +81,15 @@ public class SecurityConfig {
             .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                    .requestMatchers(
+                            "/auth/**",
+                            "/swagger-ui.html",
+                            "/swagger-ui/**",
+                            "/v3/api-docs/**",
+                            "/v2/api-docs/**",
+                            "/swagger-resources/**",
+                            "/webjars/**"
+                    ).permitAll()
                 // Endpoints for this service are prefixed with /api/identity by the API Gateway
                 // So, within the service, the paths are relative to the service root.
                 .requestMatchers("/auth/signup").permitAll()

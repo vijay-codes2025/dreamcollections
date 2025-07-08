@@ -2,8 +2,10 @@ package com.dreamcollections.services.product.controller;
 
 import com.dreamcollections.services.product.dto.CategoryDto;
 import com.dreamcollections.services.product.dto.CategoryResponseDto;
+import com.dreamcollections.services.product.dto.request.CategoryRequestDto;
 import com.dreamcollections.services.product.payload.response.MessageResponse;
 import com.dreamcollections.services.product.service.CategoryService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -15,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
+@SecurityRequirement(name = "bearerAuth")
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/categories")
@@ -31,9 +34,9 @@ public class CategoryController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<CategoryDto> createCategory(@Valid @RequestBody CategoryDto categoryDto) {
-        log.info("Request to create category: Name: {}, ParentId: {}", categoryDto.getName(), categoryDto.getParentId());
-        CategoryDto createdCategory = categoryService.createCategory(categoryDto);
+    public ResponseEntity<CategoryDto> createCategory(@Valid @RequestBody CategoryRequestDto categoryRequestDto) {
+        log.info("Request to create category: Name: {}, ParentId: {}", categoryRequestDto.getName(), categoryRequestDto.getParentId());
+        CategoryDto createdCategory = categoryService.createCategory(categoryRequestDto);
         return new ResponseEntity<>(createdCategory, HttpStatus.CREATED);
     }
 

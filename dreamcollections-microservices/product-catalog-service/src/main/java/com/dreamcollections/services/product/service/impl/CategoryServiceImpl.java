@@ -2,6 +2,7 @@ package com.dreamcollections.services.product.service.impl;
 
 import com.dreamcollections.services.product.dto.CategoryDto;
 import com.dreamcollections.services.product.dto.CategoryResponseDto;
+import com.dreamcollections.services.product.dto.request.CategoryRequestDto;
 import com.dreamcollections.services.product.exception.ResourceConflictException;
 import com.dreamcollections.services.product.exception.ResourceNotFoundException;
 import com.dreamcollections.services.product.model.Category;
@@ -38,18 +39,19 @@ public class CategoryServiceImpl implements CategoryService {
         return new CategoryDto(category.getId(), category.getName(), category.getDescription(), parentId);
     }
 
-    private Category convertToEntity(CategoryDto categoryDto, CategoryRepository categoryRepository) {
-        if (categoryDto == null) return null;
+    private Category convertToEntity(CategoryRequestDto dto, CategoryRepository categoryRepository) {
+        if (dto == null) return null;
         Category category = new Category();
-        category.setName(categoryDto.getName());
-        category.setDescription(categoryDto.getDescription());
-        if (categoryDto.getParentId() != null) {
-            Category parent = categoryRepository.findById(categoryDto.getParentId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Parent category not found with id: " + categoryDto.getParentId()));
+        category.setName(dto.getName());
+        category.setDescription(dto.getDescription());
+        if (dto.getParentId() != null) {
+            Category parent = categoryRepository.findById(dto.getParentId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Parent category not found with id: " + dto.getParentId()));
             category.setParentCategory(parent);
         }
         return category;
     }
+
 
     private CategoryResponseDto convertToResponseDto(Category category) {
         return convertToResponseDto(category, true); // By default, load subcategories
@@ -85,11 +87,11 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
-    public CategoryDto createCategory(CategoryDto categoryDto) {
-        if (categoryRepository.existsByName(categoryDto.getName())) { // Consider scope of name uniqueness (global vs. per parent)
-            throw new ResourceConflictException("Category with name '" + categoryDto.getName() + "' already exists.");
+    public CategoryDto createCategory(CategoryRequestDto categoryRequestDto) {
+        if (categoryRepository.existsByName(categoryRequestDto.getName())) {
+            throw new ResourceConflictException("Category with name '" + categoryRequestDto.getName() + "' already exists.");
         }
-        Category category = convertToEntity(categoryDto, categoryRepository);
+        Category category = convertToEntity(categoryRequestDto, categoryRepository);
         Category savedCategory = categoryRepository.save(category);
         return convertToSimpleDto(savedCategory);
     }

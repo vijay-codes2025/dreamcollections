@@ -57,6 +57,16 @@ public class SecurityConfig {
             .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                    .requestMatchers(
+                            "/products/**",
+                            "/categories/**",
+                            "/swagger-ui.html",
+                            "/swagger-ui/**",
+                            "/v3/api-docs/**",
+                            "/v2/api-docs/**",
+                            "/swagger-resources/**",
+                            "/webjars/**"
+                    ).permitAll()
                 // Public read endpoints for products and categories
                 .requestMatchers(HttpMethod.GET, "/categories/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/products/**").permitAll()

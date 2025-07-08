@@ -7,6 +7,7 @@ import com.dreamcollections.services.product.dto.UpdateStockRequestDto; // New D
 import com.dreamcollections.services.product.payload.response.MessageResponse;
 import com.dreamcollections.services.product.service.ProductService;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -22,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List; // For getProductVariantsByIds
 import java.util.Optional;
 
+@SecurityRequirement(name = "bearerAuth")
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/products") // Path within this service. API Gateway maps /api/catalog/products here
