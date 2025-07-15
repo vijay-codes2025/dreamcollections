@@ -8,9 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
-
-// Removed import java.util.List; as it's not used directly here
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
@@ -20,5 +19,10 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     // For listing, default lazy loading is fine, or specific projections can be used.
     Page<Product> findByCategoryId(Long categoryId, Pageable pageable);
+
+    // Find products by category ID including all subcategories (hierarchical filtering)
+    @Query("SELECT p FROM Product p WHERE p.category.id IN :categoryIds")
+    Page<Product> findByCategoryIdIn(List<Long> categoryIds, Pageable pageable);
+
     Page<Product> findByNameContainingIgnoreCase(String name, Pageable pageable);
 }

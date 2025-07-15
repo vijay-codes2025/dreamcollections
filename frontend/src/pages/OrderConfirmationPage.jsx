@@ -11,10 +11,23 @@ const OrderConfirmationPage = () => {
   useEffect(() => {
     const fetchOrder = async () => {
       try {
+        // Try to fetch from backend first
         const orderData = await orderService.getOrderById(orderId);
         setOrder(orderData);
-      } catch (err) {
-        setError('Failed to load order details');
+      } catch (backendError) {
+        console.log('Backend order fetch failed, checking localStorage:', backendError);
+        // Fallback to localStorage for mock orders
+        try {
+          const storedOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
+          const foundOrder = storedOrders.find(order => order.id.toString() === orderId);
+          if (foundOrder) {
+            setOrder(foundOrder);
+          } else {
+            setError('Order not found');
+          }
+        } catch (localError) {
+          setError('Failed to load order details');
+        }
       } finally {
         setLoading(false);
       }
@@ -71,7 +84,7 @@ const OrderConfirmationPage = () => {
             <div>
               <h3 className="font-semibold mb-2">Total</h3>
               <p className="text-2xl font-bold text-blue-600">
-                ${order.totalAmount ? parseFloat(order.totalAmount).toFixed(2) : '0.00'}
+                ₹{order.totalAmount ? parseFloat(order.totalAmount).toFixed(2) : '0.00'}
               </p>
             </div>
           </div>
@@ -89,7 +102,7 @@ const OrderConfirmationPage = () => {
                   </p>
                 </div>
                 <p className="font-semibold">
-                  ${item.priceAtPurchase ? (parseFloat(item.priceAtPurchase) * item.quantity).toFixed(2) : '0.00'}
+                  ₹{item.priceAtPurchase ? (parseFloat(item.priceAtPurchase) * item.quantity).toFixed(2) : '0.00'}
                 </p>
               </div>
             ))}

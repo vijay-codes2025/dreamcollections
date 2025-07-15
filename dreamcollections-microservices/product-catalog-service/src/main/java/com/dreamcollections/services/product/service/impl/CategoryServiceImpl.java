@@ -14,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -200,5 +201,24 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional(readOnly = true)
     public boolean categoryExists(String name) {
         return categoryRepository.existsByName(name);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Long> getAllCategoryIdsIncludingSubcategories(Long categoryId) {
+        List<Long> categoryIds = new ArrayList<>();
+        collectCategoryIdsRecursively(categoryId, categoryIds);
+        return categoryIds;
+    }
+
+    private void collectCategoryIdsRecursively(Long categoryId, List<Long> categoryIds) {
+        // Add the current category ID
+        categoryIds.add(categoryId);
+
+        // Find all subcategories and recursively add their IDs
+        List<Category> subCategories = categoryRepository.findByParentCategoryId(categoryId);
+        for (Category subCategory : subCategories) {
+            collectCategoryIdsRecursively(subCategory.getId(), categoryIds);
+        }
     }
 }

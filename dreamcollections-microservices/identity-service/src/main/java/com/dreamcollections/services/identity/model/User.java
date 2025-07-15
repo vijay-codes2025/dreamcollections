@@ -23,6 +23,9 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
+    @Column(name = "phone_number", unique = true)
+    private String phoneNumber;
+
     @Column(name = "first_name")
     private String firstName;
 
@@ -34,12 +37,18 @@ public class User {
     private UserRole role;
 
     // Constructors
-    public User(String username, String password, String email, String firstName, String lastName, UserRole role) {
+    public User(String username, String password, String email, String phoneNumber, String firstName, String lastName, UserRole role) {
         this.username = username;
         this.password = password;
         this.email = email;
+        this.phoneNumber = phoneNumber;
         this.firstName = firstName;
         this.lastName = lastName;
         this.role = role;
+    }
+
+    // Legacy constructor for backward compatibility
+    public User(String username, String password, String email, String firstName, String lastName, UserRole role) {
+        this(username, password, email, null, firstName, lastName, role);
     }
 }

@@ -40,7 +40,7 @@ const ProductItem = ({ product }) => {
       {product.variants && product.variants.length > 0 && (
         <div className="text-xs text-gray-500 mb-3">
           <div className="flex flex-wrap gap-1">
-            {product.variants.slice(0, 3).map((variant, index) => (
+            {product.variants.slice(0, 3).map((variant) => (
               <span key={variant.id} className="bg-gray-100 px-2 py-1 rounded">
                 {variant.size}
               </span>

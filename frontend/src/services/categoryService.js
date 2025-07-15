@@ -1,13 +1,80 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8080/api'; // API Gateway URL
+// Use relative URL to leverage Vite proxy
+const API_BASE_URL = '/api'; // This will be proxied to http://localhost:8080/api
+
+// Test function to check API connectivity
+export const testApiConnectivity = async () => {
+  try {
+    console.log('🔍 Testing API connectivity...');
+    console.log('API_BASE_URL:', API_BASE_URL);
+
+    // Test with a simple fetch to see if we can reach the server
+    const response = await fetch(`${API_BASE_URL}/categories`, {
+      method: 'GET',
+      mode: 'cors',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('🔍 Test response:', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok,
+      url: response.url,
+      type: response.type,
+      headers: Object.fromEntries(response.headers.entries())
+    });
+
+    if (response.ok) {
+      const text = await response.text();
+      console.log('🔍 Response text:', text);
+      try {
+        const json = JSON.parse(text);
+        console.log('✅ API connectivity test successful:', json);
+        return json;
+      } catch (parseError) {
+        console.error('❌ JSON parse error:', parseError);
+        return text;
+      }
+    } else {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+  } catch (error) {
+    console.error('❌ API connectivity test failed:', error);
+    throw error;
+  }
+};
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
   },
+  timeout: 10000, // 10 second timeout
+  responseType: 'json', // Ensure response is parsed as JSON
 });
+
+// Add response interceptor to handle JSON parsing
+apiClient.interceptors.response.use(
+  (response) => {
+    // Log successful responses for debugging
+    console.log('Axios response interceptor - success:', response);
+    return response;
+  },
+  (error) => {
+    // Log error responses for debugging
+    console.error('Axios response interceptor - error:', error);
+    if (error.response) {
+      console.error('Error response data:', error.response.data);
+      console.error('Error response status:', error.response.status);
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Function to get the auth token (implement as needed, e.g., from localStorage)
 const getAuthToken = () => {
@@ -32,14 +99,68 @@ apiClient.interceptors.request.use(
   }
 );
 
+// Alternative fetch-based implementation as fallback
+export const getTopLevelCategoriesFetch = async () => {
+  try {
+    console.log('🚀 Starting fetch request to /categories');
+
+    const response = await fetch(`${API_BASE_URL}/categories`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('✅ Fetch Response received:', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok,
+      headers: Object.fromEntries(response.headers.entries())
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('✅ JSON data parsed:', data);
+
+    return data;
+
+  } catch (error) {
+    console.error('❌ Error in getTopLevelCategoriesFetch:', error);
+    throw error;
+  }
+};
+
 export const getTopLevelCategories = async () => {
   try {
-    // The controller's @GetMapping on /categories now returns top-level with children
+    console.log('🚀 Starting API request to /categories');
+
+    // First test basic connectivity
+    console.log('🔍 Testing basic connectivity first...');
+    await testApiConnectivity();
+
+    // Try axios first
     const response = await apiClient.get('/categories');
+
+    console.log('✅ Axios Response received:', {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers,
+      data: response.data,
+      dataType: typeof response.data
+    });
+
+    // Return the data directly - axios should handle JSON parsing automatically
     return response.data;
-  } catch (error) {
-    console.error('Error fetching top-level categories:', error.response ? error.response.data : error.message);
-    throw error;
+
+  } catch (axiosError) {
+    console.warn('⚠️ Axios failed, trying fetch as fallback:', axiosError);
+
+    // Fallback to fetch if axios fails
+    return await getTopLevelCategoriesFetch();
   }
 };
 
@@ -68,8 +189,7 @@ export const createCategory = async (categoryData) => {
   try {
     const response = await apiClient.post('/categories', categoryData);
     return response.data;
-  } catch (error)
- {
+  } catch (error) {
     console.error('Error creating category:', error.response ? error.response.data : error.message);
     throw error;
   }
@@ -96,7 +216,11 @@ export const deleteCategory = async (id) => {
   }
 };
 
-export default {
+// Alias for getTopLevelCategories to match the expected interface
+export const getAllCategories = getTopLevelCategories;
+
+export const categoryService = {
+  getAllCategories,
   getTopLevelCategories,
   getCategoryById,
   getSubCategories,
@@ -104,3 +228,5 @@ export default {
   updateCategory,
   deleteCategory,
 };
+
+export default categoryService;

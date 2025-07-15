@@ -28,6 +28,9 @@ public class JwtUtils {
     @Value("${jwt.expiration.ms}")
     private int jwtExpirationMs;
 
+    @Value("${jwt.refresh.expiration.ms:2592000000}") // 30 days default
+    private long jwtRefreshExpirationMs;
+
     @Value("${jwt.issuer}")
     private String jwtIssuer;
 
@@ -123,5 +126,56 @@ public class JwtUtils {
           // Keys.hmacShaKeyFor should provide a compatible key.
 
         return false;
+    }
+
+    /**
+     * Generate refresh token with longer expiration
+     */
+    public String generateRefreshToken(Authentication authentication) {
+        Object principal = authentication.getPrincipal();
+        String username;
+        Long userId = null;
+
+        if (principal instanceof UserPrincipal) {
+            UserPrincipal userPrincipal = (UserPrincipal) principal;
+            username = userPrincipal.getUsername();
+            userId = userPrincipal.getId();
+        } else if (principal instanceof UserDetails) {
+            username = ((UserDetails) principal).getUsername();
+        } else {
+            username = principal.toString();
+        }
+
+        String roles = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.joining(","));
+
+        JwtBuilder jwtBuilder = Jwts.builder()
+                .setSubject(username)
+                .claim("roles", roles)
+                .claim("type", "refresh") // Mark as refresh token
+                .setIssuer(jwtIssuer)
+                .setIssuedAt(new Date());
+
+        if (userId != null) {
+            jwtBuilder.claim("userId", userId);
+        }
+
+        return jwtBuilder
+                .setExpiration(new Date((new Date()).getTime() + jwtRefreshExpirationMs))
+                .signWith(jwtSecretKey, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    /**
+     * Check if token is a refresh token
+     */
+    public boolean isRefreshToken(String token) {
+        try {
+            Claims claims = getClaimsFromJwtToken(token);
+            return "refresh".equals(claims.get("type"));
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

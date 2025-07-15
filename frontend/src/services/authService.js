@@ -1,58 +1,157 @@
-import axios from 'axios';
+import api from './api';
 
-const API_BASE_URL = 'http://localhost:8080/api';
-
-const apiClient = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// Add request interceptor for auth token
-apiClient.interceptors.request.use(
-  config => {
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
+class AuthService {
+  // Sign up with name, mobile, and optional email
+  async signup(signupData) {
+    try {
+      const response = await api.post('/auth/signup', {
+        username: signupData.phoneNumber, // Use phone number as username
+        firstName: signupData.firstName,
+        lastName: signupData.lastName || '',
+        phoneNumber: signupData.phoneNumber,
+        email: signupData.email || `${signupData.phoneNumber}@dreamcollections.com`, // Generate email if not provided
+        password: signupData.password,
+        role: 'customer'
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Signup failed' };
     }
-    return config;
-  },
-  error => Promise.reject(error)
-);
-
-export const login = async (credentials) => {
-  try {
-    const response = await apiClient.post('/auth/signin', credentials);
-    return response.data;
-  } catch (error) {
-    console.error('Login error:', error.response?.data || error.message);
-    throw error;
   }
-};
 
-export const register = async (userData) => {
-  try {
-    const response = await apiClient.post('/auth/signup', userData);
-    return response.data;
-  } catch (error) {
-    console.error('Registration error:', error.response?.data || error.message);
-    throw error;
+  // Traditional login with phone/email and password
+  async login(loginData) {
+    try {
+      const response = await api.post('/auth/signin', {
+        loginId: loginData.loginId, // Can be phone or email
+        password: loginData.password
+      });
+      
+      if (response.data.accessToken) {
+        localStorage.setItem('user', JSON.stringify(response.data));
+        localStorage.setItem('token', response.data.accessToken);
+      }
+      
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Login failed' };
+    }
   }
-};
 
-export const getCurrentUser = async () => {
-  try {
-    const response = await apiClient.get('/users/me');
-    return response.data;
-  } catch (error) {
-    console.error('Get current user error:', error.response?.data || error.message);
-    throw error;
+  // Send OTP for mobile login
+  async sendOTP(phoneNumber, email = null) {
+    try {
+      const response = await api.post('/auth/otp/send', {
+        phoneNumber: phoneNumber,
+        email: email,
+        type: 'LOGIN'
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to send OTP' };
+    }
   }
-};
 
-export default {
-  login,
-  register,
-  getCurrentUser,
-};
+  // Verify OTP and login
+  async verifyOTP(phoneNumber, email, otp) {
+    try {
+      const response = await api.post('/auth/otp/verify', {
+        phoneNumber: phoneNumber,
+        email: email,
+        otp: otp
+      });
+      
+      if (response.data.accessToken) {
+        localStorage.setItem('user', JSON.stringify(response.data));
+        localStorage.setItem('token', response.data.accessToken);
+      }
+      
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'OTP verification failed' };
+    }
+  }
+
+  // Resend OTP
+  async resendOTP(phoneNumber, email = null) {
+    try {
+      const response = await api.post('/auth/otp/resend', {
+        phoneNumber: phoneNumber,
+        email: email
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to resend OTP' };
+    }
+  }
+
+  // Google OAuth login (placeholder for future implementation)
+  async googleLogin(googleToken) {
+    try {
+      const response = await api.post('/auth/google', {
+        token: googleToken
+      });
+      
+      if (response.data.accessToken) {
+        localStorage.setItem('user', JSON.stringify(response.data));
+        localStorage.setItem('token', response.data.accessToken);
+      }
+      
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Google login failed' };
+    }
+  }
+
+  // Logout
+  logout() {
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    localStorage.removeItem('guestCart'); // Clear guest cart on logout
+  }
+
+  // Get current user
+  getCurrentUser() {
+    const user = localStorage.getItem('user');
+    return user ? JSON.parse(user) : null;
+  }
+
+  // Check if user is authenticated
+  isAuthenticated() {
+    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('user');
+    return !!(token && user);
+  }
+
+  // Get auth token
+  getToken() {
+    return localStorage.getItem('token');
+  }
+
+  // Refresh token (placeholder for future implementation)
+  async refreshToken() {
+    try {
+      const user = this.getCurrentUser();
+      if (!user?.refreshToken) {
+        throw new Error('No refresh token available');
+      }
+
+      const response = await api.post('/auth/refresh', {
+        refreshToken: user.refreshToken
+      });
+      
+      if (response.data.accessToken) {
+        const updatedUser = { ...user, ...response.data };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        localStorage.setItem('token', response.data.accessToken);
+      }
+      
+      return response.data;
+    } catch (error) {
+      this.logout(); // Clear invalid tokens
+      throw error.response?.data || { message: 'Token refresh failed' };
+    }
+  }
+}
+
+export default new AuthService();

@@ -4,7 +4,7 @@ import ProductDetail from '../components/products/ProductDetail';
 import productService from '../services/productService';
 
 const ProductPage = () => {
-  const { productId } = useParams();
+  const { id: productId } = useParams();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

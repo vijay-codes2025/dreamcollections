@@ -6,6 +6,7 @@ const RegisterForm = () => {
   const [formData, setFormData] = useState({
     username: '',
     email: '',
+    phoneNumber: '',
     password: '',
     firstName: '',
     lastName: '',
@@ -38,7 +39,10 @@ const RegisterForm = () => {
         navigate('/login');
       }, 2000);
     } catch (error) {
-      setError(error.response?.data?.message || 'Registration failed');
+      console.error('Registration form error:', error);
+      // Handle both Error objects and axios errors
+      const errorMessage = error.message || error.response?.data?.message || 'Registration failed';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -123,6 +127,21 @@ const RegisterForm = () => {
                 className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 placeholder="Email address"
                 value={formData.email}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">
+                Phone Number (Primary Username)
+              </label>
+              <input
+                id="phoneNumber"
+                name="phoneNumber"
+                type="tel"
+                required
+                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                placeholder="+919876543210"
+                value={formData.phoneNumber}
                 onChange={handleChange}
               />
             </div>

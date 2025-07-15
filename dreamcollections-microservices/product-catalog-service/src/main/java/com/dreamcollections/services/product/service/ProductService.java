@@ -14,6 +14,7 @@ public interface ProductService {
     Optional<ProductResponseDto> getProductById(Long id);
     Page<ProductResponseDto> getAllProducts(Pageable pageable);
     Page<ProductResponseDto> getProductsByCategoryId(Long categoryId, Pageable pageable);
+    Page<ProductResponseDto> getProductsByCategoryIdIncludingSubcategories(Long categoryId, Pageable pageable);
     Page<ProductResponseDto> searchProductsByName(String name, Pageable pageable);
     ProductResponseDto updateProduct(Long id, ProductRequestDto productRequestDto);
     void deleteProduct(Long id);

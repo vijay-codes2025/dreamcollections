@@ -18,6 +18,7 @@ import com.dreamcollections.services.order.model.Address;
 import com.dreamcollections.services.order.model.Order;
 import com.dreamcollections.services.order.model.OrderItem;
 import com.dreamcollections.services.order.model.OrderStatus;
+import com.dreamcollections.services.order.model.OrderStatusLog;
 import com.dreamcollections.services.order.repository.OrderRepository;
 import com.dreamcollections.services.order.service.OrderService;
 
@@ -27,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -34,9 +36,11 @@ import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -76,6 +80,22 @@ public class OrderServiceImpl implements OrderService {
         );
     }
 
+    private String formatAddress(Address address) {
+        if (address == null) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append(address.getStreet());
+        if (address.getAddressLine2() != null && !address.getAddressLine2().trim().isEmpty()) {
+            sb.append(", ").append(address.getAddressLine2());
+        }
+        sb.append(", ").append(address.getCity());
+        sb.append(", ").append(address.getStateOrProvince());
+        sb.append(" ").append(address.getPostalCode());
+        sb.append(", ").append(address.getCountry());
+        return sb.toString();
+    }
+
     private OrderResponseDto mapOrderToDto(Order order) {
         List<OrderItemResponseDto> itemDtos = order.getItems().stream()
             .map(this::mapOrderItemToDto)
@@ -89,7 +109,7 @@ public class OrderServiceImpl implements OrderService {
             order.getStatus(),
             order.getCreatedAt(),
             order.getUpdatedAt(),
-            order.getShippingAddress(),
+            formatAddress(order.getShippingAddress()),
             order.getPaymentTransactionId()
         );
     }

@@ -50,9 +50,12 @@ public class AuthController {
 
     @PostMapping("/signin")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
-        log.info("Attempting to sign in user: {}", loginRequest.getUsername());
+        // Support both new loginId field and legacy username field
+        String loginId = loginRequest.getLoginId() != null ? loginRequest.getLoginId() : loginRequest.getUsername();
+
+        log.info("Attempting to sign in user with login ID: {}", loginId);
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
+                new UsernamePasswordAuthenticationToken(loginId, loginRequest.getPassword()));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String jwt = jwtUtils.generateJwtToken(authentication);
@@ -89,9 +92,17 @@ public class AuthController {
                     .body(new MessageResponse("Error: Email is already in use!", false));
         }
 
+        if (signUpRequest.getPhoneNumber() != null && userRepository.existsByPhoneNumber(signUpRequest.getPhoneNumber())) {
+            log.warn("Phone number {} already in use.", signUpRequest.getPhoneNumber());
+            return ResponseEntity
+                    .badRequest()
+                    .body(new MessageResponse("Error: Phone number is already in use!", false));
+        }
+
         User user = new User(signUpRequest.getUsername(),
                              encoder.encode(signUpRequest.getPassword()),
                              signUpRequest.getEmail(),
+                             signUpRequest.getPhoneNumber(),
                              signUpRequest.getFirstName(),
                              signUpRequest.getLastName(),
                              null); // Role set below

@@ -16,6 +16,9 @@ public interface CategoryService {
     void deleteCategory(Long id); // Consider implications on products and sub-categories
     boolean categoryExists(String name);
 
+    // Get all category IDs including the category itself and all its subcategories (recursive)
+    List<Long> getAllCategoryIdsIncludingSubcategories(Long categoryId);
+
     // New methods for hierarchical categories
     List<CategoryResponseDto> getTopLevelCategories();
     List<CategoryResponseDto> getSubCategories(Long parentCategoryId);

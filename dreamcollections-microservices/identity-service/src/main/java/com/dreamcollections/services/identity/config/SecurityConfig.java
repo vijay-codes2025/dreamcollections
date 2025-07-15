@@ -94,8 +94,10 @@ public class SecurityConfig {
                 // So, within the service, the paths are relative to the service root.
                 .requestMatchers("/auth/signup").permitAll()
                 .requestMatchers("/auth/signin").permitAll()
+                .requestMatchers("/auth/otp/**").permitAll()
                 // Add other public endpoints for this service if any (e.g., actuator health)
                 .requestMatchers("/actuator/**").permitAll()
+                .requestMatchers("/error").permitAll()
                 .anyRequest().authenticated()
             );
 

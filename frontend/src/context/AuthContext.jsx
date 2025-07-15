@@ -19,15 +19,24 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        const token = localStorage.getItem('accessToken');
-        if (token) {
-          const userData = await authService.getCurrentUser();
+        // Check if user is authenticated using new authService
+        if (authService.isAuthenticated()) {
+          const userData = authService.getCurrentUser();
           setUser(userData);
           setIsAuthenticated(true);
+        } else {
+          // Check for phone-based auth session (legacy)
+          const currentUser = localStorage.getItem('currentUser');
+          if (currentUser) {
+            const userData = JSON.parse(currentUser);
+            setUser(userData);
+            setIsAuthenticated(true);
+          }
         }
       } catch (error) {
         console.error('Failed to initialize auth:', error);
         localStorage.removeItem('accessToken');
+        localStorage.removeItem('currentUser');
       } finally {
         setLoading(false);
       }
@@ -53,17 +62,70 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (userData) => {
+  const loginWithPhone = async (phoneNumber, otp) => {
     try {
-      const response = await authService.register(userData);
+      const formattedPhone = formatPhoneNumber(phoneNumber);
+      const response = await authService.verifyOTP(formattedPhone, null, otp);
+
+      if (response.accessToken) {
+        const user = {
+          id: response.id,
+          username: response.username,
+          email: response.email,
+          roles: response.roles
+        };
+
+        setUser(user);
+        setIsAuthenticated(true);
+        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('token', response.accessToken);
+
+        return user;
+      } else {
+        throw new Error('OTP verification failed');
+      }
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const formatPhoneNumber = (phone) => {
+    // Remove all non-digits
+    const digits = phone.replace(/\D/g, '');
+
+    // If it starts with 91, add +
+    if (digits.startsWith('91') && digits.length === 12) {
+      return '+' + digits;
+    }
+
+    // If it's 10 digits, add +91
+    if (digits.length === 10) {
+      return '+91' + digits;
+    }
+
+    // If it already has +91, return as is
+    if (phone.startsWith('+91')) {
+      return phone;
+    }
+
+    return phone;
+  };
+
+  const sendOTP = async (phoneNumber) => {
+    try {
+      const formattedPhone = formatPhoneNumber(phoneNumber);
+      const response = await authService.sendOTP(formattedPhone);
       return response;
     } catch (error) {
       throw error;
     }
   };
 
+
+
   const logout = () => {
-    localStorage.removeItem('accessToken');
+    authService.logout();
+    localStorage.removeItem('currentUser'); // Remove legacy phone auth
     setUser(null);
     setIsAuthenticated(false);
   };
@@ -73,7 +135,8 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated,
     loading,
     login,
-    register,
+    loginWithPhone,
+    sendOTP,
     logout
   };
 

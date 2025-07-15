@@ -6,7 +6,7 @@ import com.dreamcollections.services.order.dto.OrderStatusUpdateDto;
 import com.dreamcollections.services.order.model.Order;
 import com.dreamcollections.services.order.model.OrderStatus;
 import com.dreamcollections.services.order.service.OrderService;
-import com.sipios.springsearch.anotation.SearchSpec;
+// import com.sipios.springsearch.anotation.SearchSpec; // Removed dependency
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

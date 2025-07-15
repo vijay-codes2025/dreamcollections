@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import ProtectedRoute from '../components/auth/ProtectedRoute';
 import orderService from '../services/orderService';
 
 const OrdersPage = () => {
@@ -14,13 +13,27 @@ const OrdersPage = () => {
     const fetchOrders = async () => {
       try {
         setLoading(true);
+        // Try to fetch from backend first
         const data = await orderService.getMyOrders(currentPage, 10);
         setOrders(data.content || []);
         setTotalPages(data.totalPages || 0);
         setError(null);
-      } catch (err) {
-        setError('Failed to load orders');
-        setOrders([]);
+      } catch (backendError) {
+        console.log('Backend orders fetch failed, checking localStorage:', backendError);
+        // Fallback to localStorage for mock orders
+        try {
+          const storedOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
+          const startIndex = currentPage * 10;
+          const endIndex = startIndex + 10;
+          const pageOrders = storedOrders.slice(startIndex, endIndex);
+
+          setOrders(pageOrders);
+          setTotalPages(Math.ceil(storedOrders.length / 10));
+          setError(null);
+        } catch (localError) {
+          setError('Failed to load orders');
+          setOrders([]);
+        }
       } finally {
         setLoading(false);
       }
@@ -57,9 +70,8 @@ const OrdersPage = () => {
   }
 
   return (
-    <ProtectedRoute>
-      <div className="max-w-6xl mx-auto p-6">
-        <h1 className="text-3xl font-bold mb-6">My Orders</h1>
+    <div className="max-w-6xl mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-6">My Orders</h1>
 
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
@@ -119,7 +131,7 @@ const OrdersPage = () => {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                          ${order.totalAmount ? parseFloat(order.totalAmount).toFixed(2) : '0.00'}
+                          ₹{order.totalAmount ? parseFloat(order.totalAmount).toFixed(2) : '0.00'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {order.items?.length || 0} items
@@ -163,8 +175,7 @@ const OrdersPage = () => {
             )}
           </>
         )}
-      </div>
-    </ProtectedRoute>
+    </div>
   );
 };
 

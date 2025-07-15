@@ -8,20 +8,16 @@
 #    gateway:
 #      routes:
 #        # Identity Service routes
-#        - id: identity-service-auth # Route for /api/auth/**
-#          uri: lb://identity-service # Using logical name, requires service discovery or Docker network alias
-#          # uri: http://localhost:8081 # For local testing without service discovery
+#        - id: identity-service-auth
+#          uri: http://localhost:8081 # For local testing without service discovery
 #          predicates:
 #            - Path=/api/auth/**
 #          filters:
 #            # Rewrite /api/auth/** to /auth/** for the identity-service
 #            - StripPrefix=1 # Removes /api, so /auth/** remains. Identity service AuthController is at /auth
-#            # Alternative if AuthController is at /api/auth internally
-#            # - RewritePath=/api/(?<segment>.*), /$\{segment}
 #
-#        - id: identity-service-users # Route for /api/users/**
-#          uri: lb://identity-service
-#          # uri: http://localhost:8081
+#        - id: identity-service-users
+#          uri: http://localhost:8081
 #          predicates:
 #            - Path=/api/users/**
 #          filters:
@@ -29,142 +25,21 @@
 #
 #        # Product Catalog Service routes
 #        - id: product-catalog-service-products
-#          uri: lb://product-catalog-service
-#          # uri: http://localhost:8082
+#          uri: http://localhost:8082
 #          predicates:
 #            - Path=/api/products/**
 #          filters:
 #            - StripPrefix=1 # Removes /api, so /products/** remains. Product service ProductController is at /products
 #
 #        - id: product-catalog-service-categories
-#          uri: lb://product-catalog-service
-#          # uri: http://localhost:8082
+#          uri: http://localhost:8082
 #          predicates:
 #            - Path=/api/categories/**
 #          filters:
 #            - StripPrefix=1 # Removes /api, so /categories/** remains. Product service CategoryController is at /categories
-#
-#      # Default filters (optional, can apply to all routes)
-#      # default-filters:
-#      #  - AddResponseHeader=X-Powered-By, DreamCollectionsGateway
-#
-## For local testing without Eureka/Consul (service discovery)
-## Replace lb://<service-name> with http://localhost:<service-port>
-## When using service discovery (e.g. Eureka), Spring Cloud Gateway can resolve service names.
-## For now, I'll comment out the lb:// uris and use direct localhost URLs for simplicity in this step.
-## We'll switch to lb:// when service discovery is introduced.
-#
-## To make lb:// work without Eureka for now (e.g. in Docker Compose),
-## service names (identity-service, product-catalog-service) must be resolvable hostnames.
-## For local run, we'd need to explicitly enable discovery client even if not using Eureka, or use direct URLs.
-#
-## Let's refine the URIs for local run first (without service discovery client explicitly configured yet)
-## Will change to direct URLs for now, and add a note to switch to 'lb://' later.
-## The 'lb://' scheme implies that Spring Cloud LoadBalancer is on the classpath,
-## which is usually brought in by service discovery starters (like Eureka Client) or Spring Cloud Gateway itself.
-## If not using a discovery client, custom LoadBalancerClient bean might be needed or direct URLs.
-#
-## For this step, I will use direct URLs (http://localhost:port)
-## and update the predicates and filters for clarity on path rewriting.
-#
-## Revised routes for clarity and direct URLs:
-#
-## spring.cloud.gateway.routes[0].id=identity-service-auth
-## spring.cloud.gateway.routes[0].uri=http://localhost:8081
-## spring.cloud.gateway.routes[0].predicates[0]=Path=/api/auth/**
-## spring.cloud.gateway.routes[0].filters[0]=RewritePath=/api/auth/(?<segment>.*), /auth/$\{segment}
-#
-## spring.cloud.gateway.routes[1].id=identity-service-users
-## spring.cloud.gateway.routes[1].uri=http://localhost:8081
-## spring.cloud.gateway.routes[1].predicates[0]=Path=/api/users/**
-## spring.cloud.gateway.routes[1].filters[0]=RewritePath=/api/users/(?<segment>.*), /users/$\{segment}
-#
-## spring.cloud.gateway.routes[2].id=product-catalog-service-products
-## spring.cloud.gateway.routes[2].uri=http://localhost:8082
-## spring.cloud.gateway.routes[2].predicates[0]=Path=/api/products/**
-## spring.cloud.gateway.routes[2].filters[0]=RewritePath=/api/products/(?<segment>.*), /products/$\{segment}
-#
-## spring.cloud.gateway.routes[3].id=product-catalog-service-categories
-## spring.cloud.gateway.routes[3].uri=http://localhost:8082
-## spring.cloud.gateway.routes[3].predicates[0]=Path=/api/categories/**
-## spring.cloud.gateway.routes[3].filters[0]=RewritePath=/api/categories/(?<segment>.*), /categories/$\{segment}
-#
-## Logging levels for gateway debugging
-#logging:
-#  level:
-#    org.springframework.cloud.gateway: TRACE
-#    reactor.netty.http.client: DEBUG
-#    com.dreamcollections.services.apigateway: DEBUG
-#---
-## Using direct URLs for now, will switch to lb://<service-name> with service discovery
-## The RewritePath filter is more explicit for how paths are mapped to downstream services.
-#
-#server:
-#  port: 8080
-#
-#spring:
-#  application:
-#    name: api-gateway-service
-#  cloud:
-#    gateway:
-#      routes:
-#        # Identity Service routes
-#        - id: identity-service-auth
-#          uri: http://identity-service:8081 # Docker DNS resolvable service name
-#          predicates:
-#            - Path=/api/auth/**
-#          filters:
-#            # Path for identity-service AuthController is /auth/**
-#            - RewritePath=/api/auth/(?<segment>.*), /auth/$\{segment}
-#
-#        - id: identity-service-users
-#          uri: http://identity-service:8081 # Docker DNS resolvable service name
-#          predicates:
-#            - Path=/api/users/**
-#          filters:
-#            # Path for identity-service UserController is /users/**
-#            - RewritePath=/api/users/(?<segment>.*), /users/$\{segment}
-#
-#        # Product Catalog Service routes
-#        - id: product-catalog-service-products
-#          uri: http://product-catalog-service:8082 # Docker DNS resolvable service name
-#          predicates:
-#            - Path=/api/products/**
-#          filters:
-#            # Path for product-catalog-service ProductController is /products/**
-#            - RewritePath=/api/products/(?<segment>.*), /products/$\{segment}
-#
-#        - id: product-catalog-service-categories
-#          uri: http://product-catalog-service:8082 # Docker DNS resolvable service name
-#          predicates:
-#            - Path=/api/categories/**
-#          filters:
-#            # Path for product-catalog-service CategoryController is /categories/**
-#            - RewritePath=/api/categories/(?<segment>.*), /categories/$\{segment}
-#
-#        # Cart Service routes
-#        - id: cart-service-carts
-#          uri: http://cart-service:8083 # Docker DNS resolvable service name
-#          predicates:
-#            - Path=/api/carts/**
-#          filters:
-#            # CartController in cart-service is mapped to /carts/**
-#            # Example: /api/carts/mine -> /carts/mine
-#            - RewritePath=/api/carts/(?<segment>.*), /carts/$\{segment}
-#
-#        # Order Service routes
-#        - id: order-service-orders
-#          uri: http://order-service:8084 # Docker DNS resolvable service name
-#          predicates:
-#            - Path=/api/orders/**
-#          filters:
-#            # OrderController in order-service is mapped to /orders/**
-#            # Example: /api/orders/my -> /orders/my
-#            - RewritePath=/api/orders/(?<segment>.*), /orders/$\{segment}
-#
-## Logging levels for gateway debugging
-#logging:
-#  level:
-#    org.springframework.cloud.gateway: INFO # TRACE is too verbose for normal operation
-#    reactor.netty.http.client: INFO
-#    com.dreamcollections.services.apigateway: DEBUG
+# Logging levels for gateway debugging
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    reactor.netty.http.client: DEBUG
+    com.dreamcollections.services.apigateway: DEBUG

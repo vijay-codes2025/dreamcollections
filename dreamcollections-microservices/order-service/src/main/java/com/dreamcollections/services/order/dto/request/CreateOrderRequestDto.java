@@ -2,7 +2,9 @@ package com.dreamcollections.services.order.dto.request;
 
 import com.dreamcollections.services.order.dto.AddressDto; // Import AddressDto
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 

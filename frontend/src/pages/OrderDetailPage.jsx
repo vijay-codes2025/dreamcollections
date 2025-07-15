@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import ProtectedRoute from '../components/auth/ProtectedRoute';
 import orderService from '../services/orderService';
 
 const OrderDetailPage = () => {
@@ -12,9 +11,23 @@ const OrderDetailPage = () => {
   useEffect(() => {
     const fetchOrder = async () => {
       try {
+        // First try to get order from localStorage (for mock orders)
+        const localOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
+        const localOrder = localOrders.find(order => order.id.toString() === orderId);
+        
+        if (localOrder) {
+          console.log('✅ Found order in localStorage:', localOrder);
+          setOrder(localOrder);
+          setLoading(false);
+          return;
+        }
+
+        // If not found locally, try backend API
+        console.log('🔍 Order not found locally, trying backend API...');
         const orderData = await orderService.getOrderById(orderId);
         setOrder(orderData);
       } catch (err) {
+        console.error('❌ Failed to load order:', err);
         setError(err.response?.status === 404 ? 'Order not found' : 'Failed to load order');
       } finally {
         setLoading(false);
@@ -30,6 +43,7 @@ const OrderDetailPage = () => {
     switch (status) {
       case 'PENDING_PAYMENT':
         return 'text-yellow-600 bg-yellow-100';
+      case 'CONFIRMED':
       case 'PAID':
       case 'PROCESSING':
         return 'text-blue-600 bg-blue-100';
@@ -53,120 +67,117 @@ const OrderDetailPage = () => {
     );
   }
 
-  if (error || !order) {
+  if (error) {
     return (
-      <div className="max-w-2xl mx-auto p-6 text-center">
-        <h2 className="text-2xl font-bold mb-4 text-red-600">Error</h2>
-        <p className="text-gray-700 mb-4">{error || 'Order not found'}</p>
-        <Link to="/orders" className="text-blue-500 hover:underline">
-          Back to Orders
-        </Link>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Error</h1>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Link to="/orders" className="text-blue-600 hover:underline">
+            Back to Orders
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (!order) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-600 mb-4">Order Not Found</h1>
+          <Link to="/orders" className="text-blue-600 hover:underline">
+            Back to Orders
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <ProtectedRoute>
-      <div className="max-w-4xl mx-auto p-6">
-        <nav className="mb-6">
-          <Link to="/orders" className="text-blue-600 hover:underline">
-            ← Back to Orders
-          </Link>
-        </nav>
+    <div className="max-w-4xl mx-auto p-6">
+      <nav className="mb-6">
+        <Link to="/orders" className="text-blue-600 hover:underline">
+          ← Back to Orders
+        </Link>
+      </nav>
 
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex justify-between items-start mb-6">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">Order #{order.id}</h1>
-              <p className="text-gray-600">
-                Placed on {new Date(order.createdAt).toLocaleDateString()}
-              </p>
-            </div>
-            <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${getStatusColor(order.status)}`}>
-              {order.status.replace('_', ' ')}
-            </span>
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="flex justify-between items-start mb-6">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Order #{order.id}</h1>
+            <p className="text-gray-600">
+              Placed on {new Date(order.createdAt).toLocaleDateString()}
+            </p>
           </div>
+          <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${getStatusColor(order.status)}`}>
+            {order.status.replace('_', ' ')}
+          </span>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div>
-              <h3 className="font-semibold mb-3">Order Summary</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span>Order ID:</span>
-                  <span>#{order.id}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Status:</span>
-                  <span>{order.status.replace('_', ' ')}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Order Date:</span>
-                  <span>{new Date(order.createdAt).toLocaleDateString()}</span>
-                </div>
-                {order.updatedAt && (
-                  <div className="flex justify-between">
-                    <span>Last Updated:</span>
-                    <span>{new Date(order.updatedAt).toLocaleDateString()}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <h3 className="font-semibold mb-3">Shipping Address</h3>
-              <div className="text-sm text-gray-600">
-                {order.shippingAddress ? (
-                  <div>
-                    <p>{order.shippingAddress}</p>
-                  </div>
-                ) : (
-                  <p>No shipping address available</p>
-                )}
-              </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Customer Information</h2>
+            <div className="space-y-2">
+              <p><span className="font-medium">Name:</span> {order.customerName}</p>
+              <p><span className="font-medium">Phone:</span> {order.customerPhone}</p>
+              {order.customerEmail && (
+                <p><span className="font-medium">Email:</span> {order.customerEmail}</p>
+              )}
+              <p><span className="font-medium">Address:</span> {order.shippingAddress}</p>
             </div>
           </div>
 
-          <div className="mb-8">
-            <h3 className="font-semibold mb-4">Order Items</h3>
-            <div className="space-y-4">
-              {order.items?.map((item) => (
-                <div key={item.id} className="flex items-center justify-between py-4 border-b">
-                  <div className="flex items-center">
-                    <img
-                      src={item.productImageUrl || 'https://via.placeholder.com/80'}
-                      alt={item.productName}
-                      className="w-16 h-16 object-cover rounded-md mr-4"
-                    />
-                    <div>
-                      <h4 className="font-medium">{item.productName}</h4>
-                      <p className="text-sm text-gray-600">Size: {item.variantSize}</p>
-                      <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold">
-                      ${item.priceAtPurchase ? parseFloat(item.priceAtPurchase).toFixed(2) : '0.00'} each
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      Total: ${item.priceAtPurchase ? (parseFloat(item.priceAtPurchase) * item.quantity).toFixed(2) : '0.00'}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="border-t pt-6">
-            <div className="flex justify-between items-center">
-              <span className="text-xl font-bold">Total Amount:</span>
-              <span className="text-xl font-bold text-blue-600">
-                ${order.totalAmount ? parseFloat(order.totalAmount).toFixed(2) : '0.00'}
-              </span>
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
+            <div className="space-y-2">
+              <p><span className="font-medium">Order ID:</span> #{order.id}</p>
+              <p><span className="font-medium">Status:</span> {order.status.replace('_', ' ')}</p>
+              <p><span className="font-medium">Total Items:</span> {order.items?.length || 0}</p>
+              <p><span className="font-medium">Total Amount:</span> ₹{order.totalAmount ? parseFloat(order.totalAmount).toFixed(2) : '0.00'}</p>
             </div>
           </div>
         </div>
+
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Order Items</h2>
+          <div className="space-y-4">
+            {order.items?.map((item, index) => (
+              <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center space-x-4">
+                  <img 
+                    src={item.imageUrl || '/placeholder-product.jpg'} 
+                    alt={item.name}
+                    className="w-16 h-16 object-cover rounded"
+                  />
+                  <div>
+                    <h3 className="font-semibold">{item.name}</h3>
+                    <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold">
+                    ₹{item.priceAtPurchase ? parseFloat(item.priceAtPurchase).toFixed(2) : '0.00'} each
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Total: ₹{item.priceAtPurchase ? (parseFloat(item.priceAtPurchase) * item.quantity).toFixed(2) : '0.00'}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="border-t pt-6">
+          <div className="flex justify-between items-center">
+            <span className="text-xl font-bold">Total Amount:</span>
+            <span className="text-xl font-bold text-blue-600">
+              ₹{order.totalAmount ? parseFloat(order.totalAmount).toFixed(2) : '0.00'}
+            </span>
+          </div>
+        </div>
       </div>
-    </ProtectedRoute>
+    </div>
   );
 };
 

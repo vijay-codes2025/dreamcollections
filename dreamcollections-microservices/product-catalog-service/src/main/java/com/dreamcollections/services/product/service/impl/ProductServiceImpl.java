@@ -12,6 +12,7 @@ import com.dreamcollections.services.product.model.ProductVariant;
 import com.dreamcollections.services.product.repository.CategoryRepository;
 import com.dreamcollections.services.product.repository.ProductRepository;
 import com.dreamcollections.services.product.repository.ProductVariantRepository;
+import com.dreamcollections.services.product.service.CategoryService;
 import com.dreamcollections.services.product.service.ProductService;
 
 import org.slf4j.Logger;
@@ -42,6 +43,9 @@ public class ProductServiceImpl implements ProductService {
 
     @Autowired
     private ProductVariantRepository productVariantRepository;
+
+    @Autowired
+    private CategoryService categoryService;
 
     // --- Mapper Methods ---
     private ProductVariantDto mapVariantToDto(ProductVariant variant) {
@@ -152,6 +156,21 @@ public class ProductServiceImpl implements ProductService {
             throw new ResourceNotFoundException("Category", "id", categoryId);
         }
         return productRepository.findByCategoryId(categoryId, pageable).map(this::mapProductToResponseDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProductResponseDto> getProductsByCategoryIdIncludingSubcategories(Long categoryId, Pageable pageable) {
+        log.debug("Fetching products for category ID including subcategories: {}, page: {}, size: {}", categoryId, pageable.getPageNumber(), pageable.getPageSize());
+        if (!categoryRepository.existsById(categoryId)) {
+            throw new ResourceNotFoundException("Category", "id", categoryId);
+        }
+
+        // Get all category IDs including subcategories
+        List<Long> categoryIds = categoryService.getAllCategoryIdsIncludingSubcategories(categoryId);
+        log.debug("Found category IDs for hierarchical filtering: {}", categoryIds);
+
+        return productRepository.findByCategoryIdIn(categoryIds, pageable).map(this::mapProductToResponseDto);
     }
 
     @Override

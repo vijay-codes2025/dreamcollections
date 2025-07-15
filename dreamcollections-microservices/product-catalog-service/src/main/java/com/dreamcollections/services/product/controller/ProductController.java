@@ -52,9 +52,27 @@ public class ProductController {
 
     @GetMapping
     public ResponseEntity<Page<ProductResponseDto>> getAllProducts(
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Double minPrice,
+            @RequestParam(required = false) Double maxPrice,
             @PageableDefault(size = 10, sort = "name") Pageable pageable) {
-        log.debug("Request to get all products. Page: {}, Size: {}", pageable.getPageNumber(), pageable.getPageSize());
-        Page<ProductResponseDto> products = productService.getAllProducts(pageable);
+        log.debug("Request to get products. CategoryId: {}, Search: {}, MinPrice: {}, MaxPrice: {}, Page: {}, Size: {}",
+                  categoryId, search, minPrice, maxPrice, pageable.getPageNumber(), pageable.getPageSize());
+
+        Page<ProductResponseDto> products;
+
+        if (categoryId != null) {
+            // Use hierarchical filtering for category-based queries
+            products = productService.getProductsByCategoryIdIncludingSubcategories(categoryId, pageable);
+        } else if (search != null && !search.trim().isEmpty()) {
+            // Search by name
+            products = productService.searchProductsByName(search.trim(), pageable);
+        } else {
+            // Get all products
+            products = productService.getAllProducts(pageable);
+        }
+
         return ResponseEntity.ok(products);
     }
 
@@ -63,7 +81,8 @@ public class ProductController {
             @PathVariable Long categoryId,
             @PageableDefault(size = 10, sort = "name") Pageable pageable) {
         log.debug("Request to get products for category ID: {}. Page: {}, Size: {}", categoryId, pageable.getPageNumber(), pageable.getPageSize());
-        Page<ProductResponseDto> products = productService.getProductsByCategoryId(categoryId, pageable);
+        // Use hierarchical filtering to include products from subcategories
+        Page<ProductResponseDto> products = productService.getProductsByCategoryIdIncludingSubcategories(categoryId, pageable);
         return ResponseEntity.ok(products);
     }
 

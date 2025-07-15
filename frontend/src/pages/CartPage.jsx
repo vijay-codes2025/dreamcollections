@@ -66,7 +66,7 @@ const CartPage = () => {
           <div className="flex justify-between items-center mb-6">
             <span className="text-xl font-bold">Total:</span>
             <span className="text-xl font-bold text-blue-600">
-              ${cart.totalPrice ? parseFloat(cart.totalPrice).toFixed(2) : '0.00'}
+              ₹{cart.totalPrice ? parseFloat(cart.totalPrice).toFixed(2) : '0.00'}
             </span>
           </div>
 
